@@ -5,7 +5,7 @@ I've implemented an InheritanceTree class which holds the parent-child relation 
 
 Next, we initialize the type environments O and M (TypeDeclarations->identifiers, TypeDeclarations->methods, respectively) by walking through class features.
 
-Currently I'm stuck on using either C++ maps or SymbolTable for storing the type environment O and M. I'm facing glitches on both of these which I haven't been able to solve since quite a lot of time.
+Currently I'm stuck on debugging use of either C++ maps or SymbolTable for storing the type environment O and M. I'm facing glitches on both of these which I haven't been able to solve since quite a lot of time.
 
 After this annotating the AST with correct types would be as straightforward as implementing all the inference rules.
 

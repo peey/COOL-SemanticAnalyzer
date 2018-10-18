@@ -98,18 +98,10 @@ public:
   SymbolTable<Symbol, Class_> *table;
   std::map<Symbol, Class_> table2;
   InheritanceTree *tree;
+  Class_ lookup_class(Symbol s) {
+    return table2.find(s)->second;
+  }
 };
-
-class TypeDeclarations {
-  public:
-    SymbolTable<Symbol, Symbol> *identifiers;
-    SymbolTable<Symbol, method_class> *methods;
-    TypeDeclarations() : identifiers(new SymbolTable<Symbol, Symbol>()), methods(new SymbolTable<Symbol, method_class>()) {
-      identifiers->enterscope();
-      methods->enterscope();
-    };
-};
-
 
 // O(class) returns a base attribute environment a class will start with
 SymbolTable<Symbol, method_class>* M(Symbol cl);

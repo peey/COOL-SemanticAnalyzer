@@ -46,14 +46,22 @@ typedef Expressions_class *Expressions;
 typedef list_node<Case> Cases_class;
 typedef Cases_class *Cases;
 
-
 class method_class;
+
 
 #define Program_EXTRAS                          \
 virtual void semant() = 0;			\
 virtual void dump_with_types(ostream&, int) = 0; 
 
-
+class TypeDeclarations {
+  public:
+    SymbolTable<Symbol, Symbol> *identifiers;
+    SymbolTable<Symbol, method_class> *methods;
+    TypeDeclarations() : identifiers(new SymbolTable<Symbol, Symbol>()), methods(new SymbolTable<Symbol, method_class>()) {
+      identifiers->enterscope();
+      methods->enterscope();
+    };
+};
 
 #define program_EXTRAS                          \
 void semant();     				\
@@ -112,9 +120,83 @@ Symbol get_type() { return type; }           \
 Expression set_type(Symbol s) { type = s; return this; } \
 virtual void dump_with_types(ostream&,int) = 0;  \
 void dump_type(ostream&, int);               \
-Expression_class() { type = (Symbol) NULL; }
+Expression_class() { type = (Symbol) NULL; } \
+virtual Symbol infer_type(SymbolTable<Symbol, Symbol>, SymbolTable<Symbol, TypeDeclarations>, Symbol) = 0; // O, M (and attrs) and C
 
 #define Expression_SHARED_EXTRAS           \
-void dump_with_types(ostream&,int); 
+void dump_with_types(ostream&,int);
+
+
+#define object_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define no_expr_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define isvoid_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define new__EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define string_const_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define bool_const_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define int_const_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define comp_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define leq_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define eq_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define lt_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define neg_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define divide_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define mul_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define sub_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define plus_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define let_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define block_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define typcase_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define loop_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define cond_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define dispatch_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define static_dispatch_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+
+#define assign_EXTRAS \
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
 
 #endif

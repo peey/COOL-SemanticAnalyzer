@@ -140,7 +140,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
       table->addid(cl->get_name(), &cl);
-      table2.insert(cl->get_name(), cl);
+      table2.insert({cl->get_name(), cl});
       InheritanceTree *parent = tree->find(cl->get_parent());
       parent->add_child(cl->get_name());
     }
@@ -249,10 +249,15 @@ void ClassTable::install_basic_classes() {
 	       filename);
 
   table->addid(Object, &Object_class);
+  table2.insert({Object, Object_class});
   table->addid(Str, &Str_class);
+  table2.insert({Object, Object_class});
   table->addid(Int, &Int_class);
+  table2.insert({Object, Object_class});
   table->addid(Bool, &Bool_class);
+  table2.insert({Object, Object_class});
   table->addid(IO, &IO_class);
+  table2.insert({Object, Object_class});
 
   tree = new InheritanceTree(Object);
   tree->add_child(Str);
@@ -294,7 +299,6 @@ ostream& ClassTable::semant_error()
 } 
 
 
-
 /*   This is the entry point to the semantic checker.
 
      Your checker should do the following two things:
@@ -319,6 +323,7 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
+    // set up attribute and method type environments
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
       typedeclarations->addid(cl->get_name(), new TypeDeclarations());
@@ -329,7 +334,8 @@ void program_class::semant()
       while (lst != NULL) {
         // inherited attributes can't be redefined (section 5, cool manual)
         Symbol ancestor_name = lst->hd()->get_symbol();
-
+        Class_ ancestor_class = classtable->lookup_class (ancestor_name);
+        ancestor_class->load_type_info(cl->get_name());
         lst = lst->tl();
       }
     }
@@ -347,7 +353,6 @@ void class__class::semant() {
 }
 
 void class__class::load_type_info(Symbol cl) {
-  cout << "Hmm" << endl;
   for (int i = 0; i < features->len(); i++) {
     Feature f = features->nth(i);
     f->load_type_info(cl);
@@ -355,7 +360,6 @@ void class__class::load_type_info(Symbol cl) {
 }
 
 void attr_class::load_type_info(Symbol cl) {
-  cout << "Here" << endl;
   if (typedeclarations->probe(cl)) {
     typedeclarations->lookup(cl)->identifiers->addid(name, &type_decl);
   } else {
@@ -364,7 +368,6 @@ void attr_class::load_type_info(Symbol cl) {
 }
 
 void method_class::load_type_info(Symbol cl) {
-  cout << "Here" << endl;
   if (typedeclarations->probe(cl)) {
     typedeclarations->lookup(cl)->methods->addid(name, this);
   } else {
