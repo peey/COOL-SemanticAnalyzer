@@ -79,20 +79,58 @@ static void initialize_constants(void)
     substr      = idtable.add_string("substr");
     type_name   = idtable.add_string("type_name");
     val         = idtable.add_string("_val");
-}
+};
 
 
+class InheritanceTree {
+  private:
+    Class_ *root;
+    List<InheritanceTree> *children;
+  public:
+    InheritanceTree(Class_ *r) {
+      root = r;
+    };
+
+    InheritanceTree *find(Class_ *cl) {
+      if (root == cl) {
+        return this;
+      } else {
+        List<InheritanceTree> *lst = children;
+        while(lst != NULL) {
+          InheritanceTree *result = lst->hd()->find(cl);
+          if (result == NULL) {
+            lst = lst->tl();
+          } else {
+            return result;
+          }
+        }
+        return NULL;
+      }
+    };
+
+    void levels() {
+      Class_ k = *root;
+      List<InheritanceTree> *lst = children;
+      cout << "============LEVELSSS=====================" << endl;
+      while(lst != NULL) {
+        lst->hd()->levels();
+        lst = lst->tl();
+      }
+    }
+};
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
     /* Fill this in */
-
+    install_basic_classes();
 }
 
 void ClassTable::install_basic_classes() {
 
     // The tree package uses these globals to annotate the classes built below.
-   // curr_lineno  = 0;
+    // curr_lineno  = 0;
+    // what? Why? What? What's "<basic class>"?
+    // are we going to implement type_name() etc as cool methods?
     Symbol filename = stringtable.add_string("<basic class>");
     
     // The following demonstrates how to create dummy parse trees to
@@ -188,6 +226,13 @@ void ClassTable::install_basic_classes() {
 						      Str, 
 						      no_expr()))),
 	       filename);
+
+  /*
+  InheritanceTree *itree = new InheritanceTree(&Object_class);
+  itree->levels();
+
+  */
+    cout << "yo " << Object_class->name << endl;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -244,7 +289,9 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     ClassTable *classtable = new ClassTable(classes);
 
+
     /* some semantic analysis code may go here */
+
 
     if (classtable->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;

@@ -1,0 +1,8 @@
+*.o
+*.d
+lexer
+parser
+cool
+cgen
+semant
+symtab_example

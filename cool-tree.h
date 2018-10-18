@@ -32,7 +32,12 @@ public:
 typedef class Class__class *Class_;
 
 class Class__class : public tree_node {
+  public:
+    Symbol name;
 public:
+    void foo(Symbol a1) {
+      name = a1;
+    }
    tree_node *copy()		 { return copy_Class_(); }
    virtual Class_ copy_Class_() = 0;
 
@@ -154,6 +159,8 @@ protected:
    Symbol filename;
 public:
    class__class(Symbol a1, Symbol a2, Features a3, Symbol a4) {
+     Class__class::foo(a1);
+
       name = a1;
       parent = a2;
       features = a3;
@@ -161,7 +168,6 @@ public:
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
-
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS
 #endif
