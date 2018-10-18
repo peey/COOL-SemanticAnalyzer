@@ -140,18 +140,10 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
       table->addid(cl->get_name(), &cl);
-      cout << "ADDING" << "\t";
-      cout << cl->get_name() << "\t" << cl << "\t";
-      cout << "ADDED" << "\t" <<
-      *(table->lookup(cl->get_name()))
-      << "K" << endl;
-      printf("ptr: %p\n", cl->get_name());
-      table->dump();
+      table2.insert(cl->get_name(), cl);
       InheritanceTree *parent = tree->find(cl->get_parent());
       parent->add_child(cl->get_name());
     }
-
-    tree->levels(100);
 }
 
 void ClassTable::install_basic_classes() {
@@ -327,36 +319,18 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
-    cout << "wut" << endl;
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
-      cout << "wut2 " << endl;
       typedeclarations->addid(cl->get_name(), new TypeDeclarations());
-      cout << "wut3 " << endl;
-      cout << cl->get_name() << endl;
 
       List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl->get_name());
-      cout << "got ancestors" << endl;
       List<InheritanceTree> *lst = ancestors;
 
       while (lst != NULL) {
         // inherited attributes can't be redefined (section 5, cool manual)
-        cout << "before acl" << endl;
         Symbol ancestor_name = lst->hd()->get_symbol();
-        if (classtable->table->probe(ancestor_name) != NULL) {
-          cout << "probe successful " << ancestor_name <<  endl;
-          printf("ptr: %p\n", ancestor_name);
 
-          classtable->table->dump();
-          printf("hmm: %p\n", *(classtable->table)->lookup(ancestor_name));
-
-          /*
-          acl->load_type_info(cl->get_name());
-          */
-          lst = lst->tl();
-        } else {
-          cout << ancestor_name << " not found" << endl;
-        }
+        lst = lst->tl();
       }
     }
 
