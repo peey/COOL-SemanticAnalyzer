@@ -11,6 +11,59 @@
 #define TRUE 1
 #define FALSE 0
 
+class InheritanceTree {
+  private:
+    char* root;
+    List<InheritanceTree> *children;
+  public:
+    InheritanceTree(Symbol r) {
+      root = r->get_string();
+    };
+
+    InheritanceTree(char* r) {
+      root = r;
+    };
+
+    InheritanceTree *find(Symbol cl) {
+      return find(cl->get_string());
+    };
+
+    InheritanceTree *find(char* cl) {
+      if (strcmp(root, cl) == 0) {
+        return this;
+      } else {
+        List<InheritanceTree> *lst = children;
+        while(lst != NULL) {
+          InheritanceTree *result = lst->hd()->find(cl);
+          if (result == NULL) {
+            lst = lst->tl();
+          } else {
+            return result;
+          }
+        }
+        return NULL;
+      }
+    };
+
+    void add_child(Symbol child) {
+      add_child(child->get_string());
+    }
+
+    void add_child(char* child) {
+      children = new List<InheritanceTree>(new InheritanceTree(child), children);
+    }
+
+    void levels(int n) {
+      cout << root << endl;
+      List<InheritanceTree> *lst = children;
+      cout << "============LEVELSSS========="<< n << "=========" << endl;
+      while(lst != NULL) {
+        lst->hd()->levels(n - 1);
+        lst = lst->tl();
+      }
+    }
+};
+
 class ClassTable;
 typedef ClassTable *ClassTableP;
 
@@ -24,7 +77,6 @@ private:
   int semant_errors;
   void install_basic_classes();
   ostream& error_stream;
-
 public:
   ClassTable(Classes);
   int errors() { return semant_errors; }
@@ -32,6 +84,7 @@ public:
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
   SymbolTable<Symbol, Class_> *table;
+  InheritanceTree *tree;
 };
 
 

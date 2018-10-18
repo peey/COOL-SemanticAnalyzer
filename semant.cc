@@ -82,58 +82,6 @@ static void initialize_constants(void)
 };
 
 
-class InheritanceTree {
-  private:
-    char* root;
-    List<InheritanceTree> *children;
-  public:
-    InheritanceTree(Symbol r) {
-      root = r->get_string();
-    };
-
-    InheritanceTree(char* r) {
-      root = r;
-    };
-
-    InheritanceTree *find(Symbol cl) {
-      return find(cl->get_string());
-    };
-
-    InheritanceTree *find(char* cl) {
-      if (strcmp(root, cl) == 0) {
-        return this;
-      } else {
-        List<InheritanceTree> *lst = children;
-        while(lst != NULL) {
-          InheritanceTree *result = lst->hd()->find(cl);
-          if (result == NULL) {
-            lst = lst->tl();
-          } else {
-            return result;
-          }
-        }
-        return NULL;
-      }
-    };
-
-    void add_child(Symbol child) {
-      add_child(child->get_string());
-    }
-
-    void add_child(char* child) {
-      children = new List<InheritanceTree>(new InheritanceTree(child), children);
-    }
-
-    void levels(int n) {
-      cout << root << endl;
-      List<InheritanceTree> *lst = children;
-      cout << "============LEVELSSS========="<< n << "=========" << endl;
-      while(lst != NULL) {
-        lst->hd()->levels(n - 1);
-        lst = lst->tl();
-      }
-    }
-};
 
 /**
  * Type loading
@@ -173,6 +121,15 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     table = new SymbolTable<Symbol, Class_>();
     table->enterscope();
     install_basic_classes();
+
+    for (int i = 0; i < classes->len(); i++) {
+      Class_ cl = classes->nth(i);
+      table->addid(cl->get_name(), &cl);
+      InheritanceTree *parent = tree->find(cl->get_parent());
+      parent->add_child(cl->get_name());
+    }
+
+    tree->levels(100);
 }
 
 void ClassTable::install_basic_classes() {
@@ -283,13 +240,11 @@ void ClassTable::install_basic_classes() {
   table->addid(Bool, &Bool_class);
   table->addid(IO, &IO_class);
 
-  InheritanceTree *tree = new InheritanceTree(Object);
+  tree = new InheritanceTree(Object);
   tree->add_child(Str);
   tree->add_child(Int);
   tree->add_child(Bool);
   tree->add_child(IO);
-
-  tree->levels(0);
 }
 
 ////////////////////////////////////////////////////////////////////
