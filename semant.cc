@@ -1,11 +1,8 @@
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include "semant.h"
 #include "utilities.h"
-
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -313,49 +310,52 @@ ostream& ClassTable::semant_error()
      to build mycoolc.
  */
 ClassTable *classtable;
-TypeDeclarations *typedeclarations;
-
+SymbolTable<Symbol, TypeDeclarations> *typedeclarations = new SymbolTable<Symbol, TypeDeclarations>();
 
 void program_class::semant()
 {
+    typedeclarations->enterscope(); // INIT
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
-    typedeclarations = new TypeDeclarations();
-
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
-      //???
+      //cout << "class name is " << cl->get_name() << endl;
+      typedeclarations->addid(cl->get_name(), new TypeDeclarations());
+      cl->load_type_info();
     }
 
     /* some semantic analysis code may go here */
 
     if (classtable->errors()) {
-	cerr << "Compilation halted due to static semantic errors." << endl;
-	exit(1);
+      cerr << "Compilation halted due to static semantic errors." << endl;
+      exit(1);
     }
 }
 
-void class__class::load_type_info(SymbolTable<Symbol, Symbol> *attributes, SymbolTable<Symbol, method_class> *methods) {
+void class__class::semant() {
+  cout << "Happy?" << endl;
+}
+
+void class__class::load_type_info() {
   for (int i = 0; i < features->len(); i++) {
     Feature f = features->nth(i);
-    f->load_type_info(attributes, methods);
+    f->load_type_info(this);
   }
 }
 
-void attr_class::load_type_info(SymbolTable<Symbol, Symbol> *attributes, SymbolTable<Symbol, method_class> *methods) {
-  cout << "attr" << endl;
-  attributes->addid(name, &type_decl);
+void attr_class::load_type_info(Class_ cl) {
+  typedeclarations->lookup(cl->get_name())->identifiers->addid(name, &type_decl);
 }
 
-void method_class::load_type_info(SymbolTable<Symbol, Symbol> *attributes, SymbolTable<Symbol, method_class> *methods) {
-  cout << "method" << endl;
-  methods->addid(name, this);
+void method_class::load_type_info(Class_ cl) {
+  typedeclarations->lookup(cl->get_name())->methods->addid(name, this);
 }
 
-SymbolTable<Symbol, Symbol> O(Symbol cl) {
+/*
+SymbolTable<Symbol, Symbol>* O(Symbol cl) {
   List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl);
   SymbolTable<Symbol, Symbol> *attributes = new SymbolTable<Symbol, Symbol> ;
   attributes->enterscope();
@@ -365,8 +365,10 @@ SymbolTable<Symbol, Symbol> O(Symbol cl) {
 
   while (lst != NULL) {
     // inherited attributes can't be redefined (section 5, cool manual)
-    Class_ cl = classtable->table->lookup(lst->hd());
-    cl->load_type_info(attributes, methods);
+    Class_ cl = *(classtable->table->lookup(lst->hd()->get_symbol()));
+    cl->load_type_info();
     lst = lst->tl();
   }
+  return attributes;
 };
+*/

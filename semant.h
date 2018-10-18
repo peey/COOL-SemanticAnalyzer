@@ -13,23 +13,19 @@
 
 class InheritanceTree {
   private:
-    char* root;
+    Symbol root;
     List<InheritanceTree> *children;
   public:
-    InheritanceTree(Symbol r) {
-      root = r->get_string();
+    Symbol get_symbol() {
+      return root;
     };
 
-    InheritanceTree(char* r) {
+    InheritanceTree(Symbol r) {
       root = r;
     };
 
     InheritanceTree *find(Symbol cl) {
-      return find(cl->get_string());
-    };
-
-    InheritanceTree *find(char* cl) {
-      if (strcmp(root, cl) == 0) {
+      if (cl == root) {
         return this;
       } else {
         List<InheritanceTree> *lst = children;
@@ -46,10 +42,6 @@ class InheritanceTree {
     };
 
     void add_child(Symbol child) {
-      add_child(child->get_string());
-    }
-
-    void add_child(char* child) {
       children = new List<InheritanceTree>(new InheritanceTree(child), children);
     }
 
@@ -64,11 +56,7 @@ class InheritanceTree {
     }
 
     List<InheritanceTree> *ancestor_chain(Symbol cl) {
-      return ancestor_chain(cl->get_string());
-    }
-
-    List<InheritanceTree> *ancestor_chain(char* cl) {
-      if (strcmp(root, cl) == 0) { // BASE CONDITION 1
+      if (root == cl) { // BASE CONDITION 1
         return new List<InheritanceTree>(this, NULL);
       } else if (children == NULL) { // BASE CONDITION 2, leaf but not a match
         return NULL;
@@ -122,7 +110,6 @@ class TypeDeclarations {
 
 
 // O(class) returns a base attribute environment a class will start with
-SymbolTable<Symbol, Symbol> O(Symbol cl);
-SymbolTable<Symbol, method_class> M(Symbol cl);
+SymbolTable<Symbol, method_class>* M(Symbol cl);
 
 #endif
