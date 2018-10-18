@@ -82,43 +82,6 @@ static void initialize_constants(void)
 };
 
 
-class InheritanceTree {
-  private:
-    Class_ *root;
-    List<InheritanceTree> *children;
-  public:
-    InheritanceTree(Class_ *r) {
-      root = r;
-    };
-
-    InheritanceTree *find(Class_ *cl) {
-      if (root == cl) {
-        return this;
-      } else {
-        List<InheritanceTree> *lst = children;
-        while(lst != NULL) {
-          InheritanceTree *result = lst->hd()->find(cl);
-          if (result == NULL) {
-            lst = lst->tl();
-          } else {
-            return result;
-          }
-        }
-        return NULL;
-      }
-    };
-
-    void levels() {
-      Class_ k = *root;
-      List<InheritanceTree> *lst = children;
-      cout << "============LEVELSSS=====================" << endl;
-      while(lst != NULL) {
-        lst->hd()->levels();
-        lst = lst->tl();
-      }
-    }
-};
-
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
     /* Fill this in */
@@ -227,12 +190,6 @@ void ClassTable::install_basic_classes() {
 						      no_expr()))),
 	       filename);
 
-  /*
-  InheritanceTree *itree = new InheritanceTree(&Object_class);
-  itree->levels();
-
-  */
-    cout << "yo " << Object_class->name << endl;
 }
 
 ////////////////////////////////////////////////////////////////////
