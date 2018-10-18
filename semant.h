@@ -62,6 +62,29 @@ class InheritanceTree {
         lst = lst->tl();
       }
     }
+
+    List<InheritanceTree> *ancestor_chain(Symbol cl) {
+      return ancestor_chain(cl->get_string());
+    }
+
+    List<InheritanceTree> *ancestor_chain(char* cl) {
+      if (strcmp(root, cl) == 0) { // BASE CONDITION 1
+        return new List<InheritanceTree>(this, NULL);
+      } else if (children == NULL) { // BASE CONDITION 2, leaf but not a match
+        return NULL;
+      } else {
+        List<InheritanceTree> *lst = children;
+        while(lst != NULL) {
+          List<InheritanceTree> *result = lst->hd()->ancestor_chain(cl);
+          if (result == NULL) {
+            return NULL;
+          } else {
+            return new List<InheritanceTree>(this, result); // add self to result
+          }
+        }
+      }
+      return NULL; // same as base condition 2, dead code
+    }
 };
 
 class ClassTable;
@@ -97,5 +120,9 @@ class TypeDeclarations {
     };
 };
 
-#endif
 
+// O(class) returns a base attribute environment a class will start with
+SymbolTable<Symbol, Symbol> O(Symbol cl);
+SymbolTable<Symbol, method_class> M(Symbol cl);
+
+#endif

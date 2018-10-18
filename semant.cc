@@ -327,7 +327,7 @@ void program_class::semant()
 
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
-      cl->semant();
+      //???
     }
 
     /* some semantic analysis code may go here */
@@ -338,19 +338,35 @@ void program_class::semant()
     }
 }
 
-void class__class::semant() {
+void class__class::load_type_info(SymbolTable<Symbol, Symbol> *attributes, SymbolTable<Symbol, method_class> *methods) {
   for (int i = 0; i < features->len(); i++) {
     Feature f = features->nth(i);
-    f->load_type_info();
+    f->load_type_info(attributes, methods);
   }
 }
 
-void attr_class::load_type_info() {
+void attr_class::load_type_info(SymbolTable<Symbol, Symbol> *attributes, SymbolTable<Symbol, method_class> *methods) {
   cout << "attr" << endl;
-  typedeclarations->identifiers->addid(name, &type_decl);
+  attributes->addid(name, &type_decl);
 }
 
-void method_class::load_type_info() {
+void method_class::load_type_info(SymbolTable<Symbol, Symbol> *attributes, SymbolTable<Symbol, method_class> *methods) {
   cout << "method" << endl;
-  typedeclarations->methods->addid(name, this);
+  methods->addid(name, this);
 }
+
+SymbolTable<Symbol, Symbol> O(Symbol cl) {
+  List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl);
+  SymbolTable<Symbol, Symbol> *attributes = new SymbolTable<Symbol, Symbol> ;
+  attributes->enterscope();
+  SymbolTable<Symbol, method_class> *methods = new SymbolTable<Symbol, method_class> ;
+  methods->enterscope();
+  List<InheritanceTree> *lst = ancestors;
+
+  while (lst != NULL) {
+    // inherited attributes can't be redefined (section 5, cool manual)
+    Class_ cl = classtable->table->lookup(lst->hd());
+    cl->load_type_info(attributes, methods);
+    lst = lst->tl();
+  }
+};

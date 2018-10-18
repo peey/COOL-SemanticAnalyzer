@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <symtab.h>
+#include <stringtab.h>
+#include <stringtab_functions.h>
+
 
 int main(int argc, char *argv[]) {
   // 
@@ -50,6 +53,11 @@ int main(int argc, char *argv[]) {
   // check whether Miguel is in any scope; predicate is now false
   cout << ((map->lookup(Miguel) != NULL) ? "Yes\n" : "No\n");
 
+
+  /*
+  Symbol a = stringtable.add_string("hello", 10);
+  Symbol b = stringtable.add_string("hello", 20);
+  cout << a << b << endl;
+  */
   return 0;
- 
 }
