@@ -140,6 +140,13 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
       table->addid(cl->get_name(), &cl);
+      cout << "ADDING" << "\t";
+      cout << cl->get_name() << "\t" << cl << "\t";
+      cout << "ADDED" << "\t" <<
+      *(table->lookup(cl->get_name()))
+      << "K" << endl;
+      printf("ptr: %p\n", cl->get_name());
+      table->dump();
       InheritanceTree *parent = tree->find(cl->get_parent());
       parent->add_child(cl->get_name());
     }
@@ -320,11 +327,37 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
+    cout << "wut" << endl;
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
-      //cout << "class name is " << cl->get_name() << endl;
+      cout << "wut2 " << endl;
       typedeclarations->addid(cl->get_name(), new TypeDeclarations());
-      cl->load_type_info();
+      cout << "wut3 " << endl;
+      cout << cl->get_name() << endl;
+
+      List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl->get_name());
+      cout << "got ancestors" << endl;
+      List<InheritanceTree> *lst = ancestors;
+
+      while (lst != NULL) {
+        // inherited attributes can't be redefined (section 5, cool manual)
+        cout << "before acl" << endl;
+        Symbol ancestor_name = lst->hd()->get_symbol();
+        if (classtable->table->probe(ancestor_name) != NULL) {
+          cout << "probe successful " << ancestor_name <<  endl;
+          printf("ptr: %p\n", ancestor_name);
+
+          classtable->table->dump();
+          printf("hmm: %p\n", *(classtable->table)->lookup(ancestor_name));
+
+          /*
+          acl->load_type_info(cl->get_name());
+          */
+          lst = lst->tl();
+        } else {
+          cout << ancestor_name << " not found" << endl;
+        }
+      }
     }
 
     /* some semantic analysis code may go here */
@@ -339,36 +372,34 @@ void class__class::semant() {
   cout << "Happy?" << endl;
 }
 
-void class__class::load_type_info() {
+void class__class::load_type_info(Symbol cl) {
+  cout << "Hmm" << endl;
   for (int i = 0; i < features->len(); i++) {
     Feature f = features->nth(i);
-    f->load_type_info(this);
+    f->load_type_info(cl);
   }
 }
 
-void attr_class::load_type_info(Class_ cl) {
-  typedeclarations->lookup(cl->get_name())->identifiers->addid(name, &type_decl);
+void attr_class::load_type_info(Symbol cl) {
+  cout << "Here" << endl;
+  if (typedeclarations->probe(cl)) {
+    typedeclarations->lookup(cl)->identifiers->addid(name, &type_decl);
+  } else {
+    cerr << "Not found" << endl;
+  }
 }
 
-void method_class::load_type_info(Class_ cl) {
-  typedeclarations->lookup(cl->get_name())->methods->addid(name, this);
+void method_class::load_type_info(Symbol cl) {
+  cout << "Here" << endl;
+  if (typedeclarations->probe(cl)) {
+    typedeclarations->lookup(cl)->methods->addid(name, this);
+  } else {
+    cerr << "Not found" << endl;
+  }
 }
 
 /*
 SymbolTable<Symbol, Symbol>* O(Symbol cl) {
-  List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl);
-  SymbolTable<Symbol, Symbol> *attributes = new SymbolTable<Symbol, Symbol> ;
-  attributes->enterscope();
-  SymbolTable<Symbol, method_class> *methods = new SymbolTable<Symbol, method_class> ;
-  methods->enterscope();
-  List<InheritanceTree> *lst = ancestors;
-
-  while (lst != NULL) {
-    // inherited attributes can't be redefined (section 5, cool manual)
-    Class_ cl = *(classtable->table->lookup(lst->hd()->get_symbol()));
-    cl->load_type_info();
-    lst = lst->tl();
-  }
   return attributes;
 };
 */
