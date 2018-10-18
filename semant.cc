@@ -380,3 +380,120 @@ SymbolTable<Symbol, Symbol>* O(Symbol cl) {
   return attributes;
 };
 */
+
+Symbol object_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  return Object;
+};
+
+// perhaps this can be left as null
+Symbol no_expr_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  return NULL;
+};
+
+Symbol isvoid_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  return Bool;
+};
+
+//TODO according to grammar, new can't be passed params, but check again
+Symbol new__class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  return type_name;
+};
+
+Symbol string_const_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  return Str;
+};
+
+Symbol bool_const_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  return Bool;
+};
+
+Symbol int_const_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  return Int;
+};
+
+// complement
+Symbol comp_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  if (e1->infer_type(a,b,c) == Bool) {
+    return Bool;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+Symbol leq_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+    return Bool;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+// same as leq
+Symbol eq_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+    return Bool;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+// same as leq
+Symbol lt_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+    return Bool;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+Symbol neg_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  if (e1->infer_type(a,b,c) == Int) {
+    return Int;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+Symbol divide_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+    return Int;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+// same as divide
+Symbol mul_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+    return Int;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+// same as divide
+Symbol sub_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+    return Int;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+// same as divide
+Symbol plus_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+    return Int;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};

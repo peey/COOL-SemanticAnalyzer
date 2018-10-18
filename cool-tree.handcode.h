@@ -128,52 +128,52 @@ void dump_with_types(ostream&,int);
 
 
 #define object_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define no_expr_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define isvoid_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define new__EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define string_const_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define bool_const_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> , SymbolTable<Symbol, TypeDeclarations> , Symbol );
 
 #define int_const_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define comp_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define leq_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define eq_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define lt_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define neg_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define divide_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define mul_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define sub_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define plus_EXTRAS \
-Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
+Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c);
 
 #define let_EXTRAS \
 Symbol infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {return NULL;};
