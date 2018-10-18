@@ -95,6 +95,24 @@ Symbol class__class::get_parent() {
   return parent;
 }
 
+Symbol method_class::get_return_type() {
+  return return_type;
+}
+
+Symbol attr_class::get_name() {
+  return name;
+}
+
+
+Symbol method_class::get_name() {
+  return name;
+}
+
+Formals method_class::get_formals() {
+  return formals;
+}
+
+
 /*
 bool class__class::is_subtype_of(ClassTable ct, Symbol supertype) {
   if (!ct->table->probe(supertype)) {
@@ -294,16 +312,25 @@ ostream& ClassTable::semant_error()
      errors. Part 2) can be done in a second stage, when you want
      to build mycoolc.
  */
+ClassTable *classtable;
+TypeDeclarations *typedeclarations;
+
+
 void program_class::semant()
 {
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
-    ClassTable *classtable = new ClassTable(classes);
+    classtable = new ClassTable(classes);
 
+    typedeclarations = new TypeDeclarations();
+
+    for (int i = 0; i < classes->len(); i++) {
+      Class_ cl = classes->nth(i);
+      cl->semant();
+    }
 
     /* some semantic analysis code may go here */
-
 
     if (classtable->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;
@@ -311,4 +338,19 @@ void program_class::semant()
     }
 }
 
+void class__class::semant() {
+  for (int i = 0; i < features->len(); i++) {
+    Feature f = features->nth(i);
+    f->load_type_info();
+  }
+}
 
+void attr_class::load_type_info() {
+  cout << "attr" << endl;
+  typedeclarations->identifiers->addid(name, &type_decl);
+}
+
+void method_class::load_type_info() {
+  cout << "method" << endl;
+  typedeclarations->methods->addid(name, this);
+}

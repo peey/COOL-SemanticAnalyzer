@@ -58,21 +58,30 @@ void dump_with_types(ostream&, int);
 virtual Symbol get_filename() = 0;      \
 virtual void dump_with_types(ostream&,int) = 0; \
 virtual Symbol get_name() = 0; \
-virtual Symbol get_parent() = 0; 
+virtual Symbol get_parent() = 0; \
+virtual void semant() = 0;			
 
 #define class__EXTRAS                                 \
 Symbol get_filename() { return filename; }             \
 void dump_with_types(ostream&,int);  \
 Symbol get_name(); \
-Symbol get_parent(); 
+Symbol get_parent(); \
+void semant();			
 
 #define Feature_EXTRAS                                        \
-virtual void dump_with_types(ostream&,int) = 0; 
+virtual void dump_with_types(ostream&,int) = 0; \
+virtual void load_type_info() = 0; \
+virtual Symbol get_name() = 0;
 
-
+// this is defined for method and attribute
 #define Feature_SHARED_EXTRAS                                       \
-void dump_with_types(ostream&,int);    
+void dump_with_types(ostream&,int);    \
+void load_type_info(); \
+Symbol get_name();
 
+#define method_EXTRAS \
+Formals get_formals(); \
+Symbol get_return_type();
 
 #define Formal_EXTRAS                              \
 virtual void dump_with_types(ostream&,int) = 0;
