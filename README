@@ -3,12 +3,12 @@ Write-up for PA3
 
 I've implemented an InheritanceTree class which holds the parent-child relation between classes. The design is clean and lets you get things like chain of ancestors (useful for attribute initialization) pretty easily.
 
+We need to expose a few members of the type "Class_" since we need access to parent and current class information to build up the inheritance tree. 
+
 Next, we initialize the type environments O and M (TypeDeclarations->identifiers, TypeDeclarations->methods, respectively) by walking through class features.
 
-Currently I'm stuck on debugging use of either C++ maps or SymbolTable for storing the type environment O and M. I'm facing glitches on both of these which I haven't been able to solve since quite a lot of time.
+After this annotating the AST with correct types is as straightforward as implementing all the inference rules. I've already implemented all of the basic rules.
 
-After this annotating the AST with correct types would be as straightforward as implementing all the inference rules.
+Lastly we'll handle SELF_TYPE and any non-typecheck semantic analyses, this isn't yet done.
 
-Lastly we'll handle SELF_TYPE and any non-typecheck semantic analyses.
-
-I will submit again to the late deadline.
+The submission is incomplete but it compiles. I will submit again to the late deadline.
