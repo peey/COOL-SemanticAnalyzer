@@ -31,6 +31,7 @@ public:
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
+  SymbolTable<Symbol, Class_> *table;
 };
 
 
