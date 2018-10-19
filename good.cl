@@ -2,11 +2,24 @@ class C {
 	a : Int <- 1;
 	b : Bool <- a <= 10;
 	init(x : Int, y : Bool) : C {
-           {
+       {
 		a <- x;
 		b <- y;
-		self;
-           }
+    while y loop {
+      a <- a + x;
+    } pool;
+    self;
+   }
+	};
+
+	init2(x : Int, y : Bool) : Object {
+       {
+		a <- x;
+		b <- y;
+    while y loop {
+      a <- a + x;
+    } pool;
+   }
 	};
 };
 

@@ -74,6 +74,7 @@ class InheritanceTree {
         return NULL; // same as base condition 2, dead code
       }
     }
+
 };
 
 class ClassTable;
@@ -102,6 +103,7 @@ public:
     return table2.find(s)->second;
   };
   bool is_supertype_of(Symbol t1, Symbol t2, Symbol c);
+  Symbol lowest_common_ancestor(Symbol a, Symbol b, Symbol c);
 };
 
 // O(class) returns a base attribute environment a class will start with

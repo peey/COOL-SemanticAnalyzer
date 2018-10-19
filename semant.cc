@@ -321,6 +321,27 @@ bool ClassTable::is_supertype_of(Symbol t1, Symbol t2, Symbol c) {
   }
 }
 
+Symbol ClassTable::lowest_common_ancestor(Symbol a, Symbol b, Symbol c) {
+  //citation: lowest common ancestor algorithm refered from https://stackoverflow.com/a/6342546/1412255. Implementation is mine.
+  // TODO verify self type logic 
+  List<InheritanceTree> *chain_a = tree->ancestor_chain(a == SELF_TYPE? c : a);
+  List<InheritanceTree> *chain_b = tree->ancestor_chain(b == SELF_TYPE? c : b);
+
+  List<InheritanceTree> *lst1 = chain_a;
+  List<InheritanceTree> *lst2 = chain_b;
+
+  InheritanceTree* lca = lst1->hd(); // will always be object
+
+  while (lst1 != NULL && lst2 != NULL && lst1->hd() == lst2->hd()) {
+    lca = lst1->hd();
+    lst1 = lst1->tl();
+    lst2 = lst2->tl();
+  }
+  // as soon as they're unequal, we've divereged from the lowest common ancestor and we return the one we have
+
+  return lca->get_symbol();
+}
+
 /*   This is the entry point to the semantic checker.
 
      Your checker should do the following two things:
@@ -497,7 +518,7 @@ Symbol comp_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Bool) {
     return Bool;
   } else {
-    cerr << "type error" << endl;
+    cerr << "type error comp" << endl;
     return No_type;
   }
 };
@@ -506,7 +527,7 @@ Symbol leq_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Bool;
   } else {
-    cerr << "type error" << endl;
+    cerr << "type error leq" << endl;
     return No_type;
   }
 };
@@ -516,7 +537,7 @@ Symbol eq_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Bool;
   } else {
-    cerr << "type error" << endl;
+    cerr << "type error eq" << endl;
     return No_type;
   }
 };
@@ -526,7 +547,7 @@ Symbol lt_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Bool;
   } else {
-    cerr << "type error" << endl;
+    cerr << "type error lt" << endl;
     return No_type;
   }
 };
@@ -535,7 +556,7 @@ Symbol neg_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error" << endl;
+    cerr << "type error neg" << endl;
     return No_type;
   }
 };
@@ -544,7 +565,7 @@ Symbol divide_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error" << endl;
+    cerr << "type error divide" << endl;
     return No_type;
   }
 };
@@ -554,7 +575,7 @@ Symbol mul_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error" << endl;
+    cerr << "type error mul" << endl;
     return No_type;
   }
 };
@@ -564,7 +585,7 @@ Symbol sub_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error" << endl;
+    cerr << "type error sub" << endl;
     return No_type;
   }
 };
@@ -574,7 +595,7 @@ Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error" << endl;
+    cerr << "type error plus" << endl;
     return No_type;
   }
 };
@@ -602,7 +623,12 @@ Symbol block_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 Symbol typcase_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
 
-Symbol loop_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+Symbol loop_class::infer_type(TypeEnvironment *e, Symbol c) {
+  // The manual gives [Loop-False] and [Loop-True] but we can't always determine what the condition will evaluate to at static time, so we take the lub/lowest_common_ancestor of both types
+  Symbol pred_type = pred->infer_type(e, c);
+  assert(classtable->is_supertype_of(Bool, pred_type, c)); // this isn't specified in the manual explicitly, but implicitly having a false and a true rule means this
+  return classtable->lowest_common_ancestor(pred_type, body->infer_type(e, c), c);
+};
 
 Symbol cond_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
 
