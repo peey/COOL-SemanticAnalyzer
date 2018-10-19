@@ -143,6 +143,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
       table->addid(cl->get_name(), &cl);
       table2.insert({cl->get_name(), cl});
       InheritanceTree *parent = tree->find(cl->get_parent());
+      //cout << "parent: " << cl->get_parent() << endl;
       parent->add_child(cl->get_name());
     }
 }
@@ -344,24 +345,36 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
+    //classtable->tree->levels(0);
+
     // set up attribute and method type environments
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
       typedeclarations->addid(cl->get_name(), new TypeEnvironment());
 
+      //cout << "Looking up ancestors of: " << cl->get_name() << endl;
       List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl->get_name());
       List<InheritanceTree> *lst = ancestors;
+      //cout << "Got: " << lst << endl;
 
       while (lst != NULL) {
         // inherited attributes can't be redefined (section 5, cool manual)
         Symbol ancestor_name = lst->hd()->get_symbol();
         Class_ ancestor_class = classtable->lookup_class (ancestor_name);
+
+        //cout << "One ancestor " << ancestor_name << endl;
         ancestor_class->load_type_info(cl->get_name());
         lst = lst->tl();
       }
     }
 
     /* some semantic analysis code may go here */
+    //for every method, and attribute (with init) in every class, analyze
+    for (int i = 0; i < classes->len(); i++) {
+      Class_ cl = classes->nth(i);
+      cl->semant(typedeclarations->lookup(cl->get_name()));
+    }
+
 
     if (classtable->errors()) {
       cerr << "Compilation halted due to static semantic errors." << endl;
@@ -369,11 +382,24 @@ void program_class::semant()
     }
 }
 
-void class__class::semant() {
-  cout << "Happy?" << endl;
+void class__class::semant(TypeEnvironment *e) {
+  //cout << "Now Processing: "<< name << endl;
+  for (int i = 0; i < features->len(); i++) {
+    Feature f = features->nth(i);
+    f->semant(e, name);
+  }
+}
+
+void attr_class::semant(TypeEnvironment *e, Symbol c) {
+  cout << "symbol: " << e << " type: " << init->infer_type(e, c) << endl;
+}
+
+void method_class::semant(TypeEnvironment *e, Symbol c) {
+  cout << "ciao" << endl;
 }
 
 void class__class::load_type_info(Symbol cl) {
+  //cout << "Class being processed: " << name << endl;
   for (int i = 0; i < features->len(); i++) {
     Feature f = features->nth(i);
     f->load_type_info(cl);
@@ -381,7 +407,9 @@ void class__class::load_type_info(Symbol cl) {
 }
 
 void attr_class::load_type_info(Symbol cl) {
+  //cout << "Control reaches here" << endl;
   if (typedeclarations->probe(cl)) {
+    //cout << "Adding attr: " << name << endl;
     typedeclarations->lookup(cl)->O->addid(name, &type_decl);
   } else {
     cerr << "Not found" << endl;
@@ -389,6 +417,7 @@ void attr_class::load_type_info(Symbol cl) {
 }
 
 void method_class::load_type_info(Symbol cl) {
+  //cout << "Method: " << name <<  endl;
   if (typedeclarations->probe(cl)) {
     typedeclarations->lookup(cl)->M->addid(name, this);
   } else {
@@ -403,7 +432,20 @@ SymbolTable<Symbol, Symbol>* O(Symbol cl) {
 */
 
 Symbol object_class::infer_type(TypeEnvironment *e, Symbol c) {
-  return Object;
+  /*
+  cout << "Class: " << c << endl;
+  e->O->dump();
+  cout << "dump end" << endl;
+  cout << "Name: " << name << endl;
+  */
+  Symbol *result = e->O->lookup(name);
+  if (result != NULL) {
+    //cout << "Lookup: " << *result << endl;
+    return *result;
+  } else {
+    cerr << "semantic error: used but not defined" << endl;
+    return No_type;
+  }
 };
 
 // works for empty let declarations

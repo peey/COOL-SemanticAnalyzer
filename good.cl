@@ -1,6 +1,6 @@
 class C {
-	a : Int;
-	b : Bool;
+	a : Int <- 1;
+	b : Bool <- a <= 10;
 	init(x : Int, y : Bool) : C {
            {
 		a <- x;

@@ -57,6 +57,7 @@ class InheritanceTree {
     }
 
     List<InheritanceTree> *ancestor_chain(Symbol cl) {
+      //cout << "looking up ancestors, args are " << root << " and " << cl << endl;
       if (root == cl) { // BASE CONDITION 1
         return new List<InheritanceTree>(this, NULL);
       } else if (children == NULL) { // BASE CONDITION 2, leaf but not a match
@@ -65,14 +66,13 @@ class InheritanceTree {
         List<InheritanceTree> *lst = children;
         while(lst != NULL) {
           List<InheritanceTree> *result = lst->hd()->ancestor_chain(cl);
-          if (result == NULL) {
-            return NULL;
-          } else {
+          if (result != NULL) {
             return new List<InheritanceTree>(this, result); // add self to result
           }
+          lst = lst->tl();
         }
+        return NULL; // same as base condition 2, dead code
       }
-      return NULL; // same as base condition 2, dead code
     }
 };
 
