@@ -451,6 +451,10 @@ void formal_class::semant(TypeEnvironment *e, Symbol c) {
   e->O->addid(name, &type_decl);
 }
 
+Symbol formal_class::get_type() {
+  return type_decl;
+}
+
 void class__class::load_type_info(Symbol cl) {
   //cout << "Class being processed: " << name << endl;
   //cout << "polo 2" << endl;
@@ -654,7 +658,42 @@ Symbol cond_class::infer_type(TypeEnvironment *e, Symbol c) {
   return classtable->lowest_common_ancestor(then_exp->ias_type(e, c), else_exp->ias_type(e, c), c); // takes care of no else
 };
 
-Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
+  Symbol T0 = expr->ias_type(e, c);
+  Symbol T0dash = T0;
+  if (T0 == SELF_TYPE) {
+    T0dash = c;
+  }
+
+
+  TypeEnvironment *edash = typedeclarations->lookup(T0dash);
+
+  /*
+  cout << "core dumped yet?" << endl;
+  cout << "T0 " << edash << endl;
+  cout << "edash " << T0dash << endl;
+  */
+
+  method_class *m =  edash->M->lookup(name); // unclean...
+
+  Formals formals = m->get_formals();
+
+  assert(formals->len() == actual->len());
+
+  Symbol Tnplus1 = m->get_return_type();
+
+  if (Tnplus1 == SELF_TYPE) {
+    Tnplus1 = T0;
+  }
+
+  for (int i = 0; i < formals->len(); i++) {
+    Formal formal = formals->nth(i);
+    Expression a = actual->nth(i);
+    assert(classtable->is_supertype_of(formal->get_type(), a->ias_type(e, c), c));
+  }
+
+  return Tnplus1;
+};
 
 Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
 

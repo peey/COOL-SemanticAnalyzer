@@ -19,10 +19,12 @@ class C {
     while y loop {
       a <- a + x;
     } pool;
+    init(x, y);
+    init3(x, y);
    }
 	};
 
-	init2(x : Int, y : Bool) : Bool {
+	init3(x : Int, y : Bool) : Bool {
    {
      let x : Bool <- b in {
         x <- true;

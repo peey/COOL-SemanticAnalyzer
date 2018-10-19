@@ -102,12 +102,14 @@ Symbol get_return_type();
 
 #define Formal_EXTRAS                              \
 virtual void dump_with_types(ostream&,int) = 0; \
-virtual void semant(TypeEnvironment *e, Symbol c) = 0;
+virtual void semant(TypeEnvironment *e, Symbol c) = 0; \
+virtual Symbol get_type() = 0; 
 
 
 #define formal_EXTRAS                           \
 void dump_with_types(ostream&,int); \
-void semant(TypeEnvironment *e, Symbol c);
+void semant(TypeEnvironment *e, Symbol c); \
+virtual Symbol get_type(); 
 
 
 #define Case_EXTRAS                             \
