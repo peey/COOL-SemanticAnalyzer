@@ -121,82 +121,82 @@ Expression set_type(Symbol s) { type = s; return this; } \
 virtual void dump_with_types(ostream&,int) = 0;  \
 void dump_type(ostream&, int);               \
 Expression_class() { type = (Symbol) NULL; } \
-virtual Symbol infer_type(TypeEnvironment, Symbol) = 0; // O, M, and C
+virtual Symbol infer_type(TypeEnvironment *, Symbol) = 0; // O, M, and C
 
 #define Expression_SHARED_EXTRAS           \
 void dump_with_types(ostream&,int);
 
 
 #define object_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define no_expr_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define isvoid_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define new__EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define string_const_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define bool_const_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define int_const_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define comp_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define leq_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define eq_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define lt_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define neg_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define divide_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define mul_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define sub_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define plus_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define let_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c) {return NULL;};
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 #define block_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c) {return NULL;};
+Symbol infer_type(TypeEnvironment *e, Symbol c) {return NULL;};
 
 #define typcase_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c) {return NULL;};
+Symbol infer_type(TypeEnvironment *e, Symbol c) {return NULL;};
 
 #define loop_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c) {return NULL;};
+Symbol infer_type(TypeEnvironment *e, Symbol c) {return NULL;};
 
 #define cond_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c) {return NULL;};
+Symbol infer_type(TypeEnvironment *e, Symbol c) {return NULL;};
 
 #define dispatch_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c) {return NULL;};
+Symbol infer_type(TypeEnvironment *e, Symbol c) {return NULL;};
 
 #define static_dispatch_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c) {return NULL;};
+Symbol infer_type(TypeEnvironment *e, Symbol c) {return NULL;};
 
 #define assign_EXTRAS \
-Symbol infer_type(TypeEnvironment e, Symbol c) {return NULL;};
+Symbol infer_type(TypeEnvironment *e, Symbol c) {return NULL;};
 
 #endif

@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include "semant.h"
 #include "utilities.h"
+#include <cassert>
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -381,38 +382,38 @@ SymbolTable<Symbol, Symbol>* O(Symbol cl) {
 };
 */
 
-Symbol object_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol object_class::infer_type(TypeEnvironment *e, Symbol c) {
   return Object;
 };
 
 // perhaps this can be left as null
-Symbol no_expr_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol no_expr_class::infer_type(TypeEnvironment *e, Symbol c) {
   return NULL;
 };
 
-Symbol isvoid_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol isvoid_class::infer_type(TypeEnvironment *e, Symbol c) {
   return Bool;
 };
 
 //TODO according to grammar, new can't be passed params, but check again
-Symbol new__class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol new__class::infer_type(TypeEnvironment *e, Symbol c) {
   return type_name;
 };
 
-Symbol string_const_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol string_const_class::infer_type(TypeEnvironment *e, Symbol c) {
   return Str;
 };
 
-Symbol bool_const_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol bool_const_class::infer_type(TypeEnvironment *e, Symbol c) {
   return Bool;
 };
 
-Symbol int_const_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol int_const_class::infer_type(TypeEnvironment *e, Symbol c) {
   return Int;
 };
 
 // complement
-Symbol comp_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol comp_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Bool) {
     return Bool;
   } else {
@@ -421,7 +422,7 @@ Symbol comp_class::infer_type(TypeEnvironment e, Symbol c) {
   }
 };
 
-Symbol leq_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol leq_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Bool;
   } else {
@@ -431,7 +432,7 @@ Symbol leq_class::infer_type(TypeEnvironment e, Symbol c) {
 };
 
 // same as leq
-Symbol eq_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol eq_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Bool;
   } else {
@@ -441,7 +442,7 @@ Symbol eq_class::infer_type(TypeEnvironment e, Symbol c) {
 };
 
 // same as leq
-Symbol lt_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol lt_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Bool;
   } else {
@@ -450,7 +451,7 @@ Symbol lt_class::infer_type(TypeEnvironment e, Symbol c) {
   }
 };
 
-Symbol neg_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol neg_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int) {
     return Int;
   } else {
@@ -459,7 +460,7 @@ Symbol neg_class::infer_type(TypeEnvironment e, Symbol c) {
   }
 };
 
-Symbol divide_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol divide_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
@@ -469,7 +470,7 @@ Symbol divide_class::infer_type(TypeEnvironment e, Symbol c) {
 };
 
 // same as divide
-Symbol mul_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol mul_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
@@ -479,7 +480,7 @@ Symbol mul_class::infer_type(TypeEnvironment e, Symbol c) {
 };
 
 // same as divide
-Symbol sub_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol sub_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
@@ -489,11 +490,26 @@ Symbol sub_class::infer_type(TypeEnvironment e, Symbol c) {
 };
 
 // same as divide
-Symbol plus_class::infer_type(TypeEnvironment e, Symbol c) {
+Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
     cerr << "type error" << endl;
     return NULL;
   }
+};
+
+// same as divide
+Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
+  Symbol T0dash = type_decl;
+  if (type_decl == SELF_TYPE) {
+    //TODO
+  }
+  Symbol T1 = init->infer_type(e, c);
+  assert(classtable->is_supertype_of(T0dash, T1));
+  e->O->enterscope();
+  e->O->addid(identifier, &T0dash);
+  Symbol T2 = body->infer_type(e, c);
+  e->O->exitscope();
+  return T2;
 };

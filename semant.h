@@ -100,6 +100,14 @@ public:
   InheritanceTree *tree;
   Class_ lookup_class(Symbol s) {
     return table2.find(s)->second;
+  };
+  bool is_supertype_of(Symbol t1, Symbol t2) {
+    InheritanceTree *node1 = tree->find(t1);
+    if (node1->find(t2) != NULL) {
+      return true;
+    } else {
+      return false;
+    }
   }
 };
 
