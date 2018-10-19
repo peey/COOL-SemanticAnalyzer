@@ -313,7 +313,7 @@ ostream& ClassTable::semant_error()
      to build mycoolc.
  */
 ClassTable *classtable;
-SymbolTable<Symbol, TypeDeclarations> *typedeclarations = new SymbolTable<Symbol, TypeDeclarations>();
+SymbolTable<Symbol, TypeEnvironment> *typedeclarations = new SymbolTable<Symbol, TypeEnvironment>();
 
 void program_class::semant()
 {
@@ -326,7 +326,7 @@ void program_class::semant()
     // set up attribute and method type environments
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
-      typedeclarations->addid(cl->get_name(), new TypeDeclarations());
+      typedeclarations->addid(cl->get_name(), new TypeEnvironment());
 
       List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl->get_name());
       List<InheritanceTree> *lst = ancestors;
@@ -361,7 +361,7 @@ void class__class::load_type_info(Symbol cl) {
 
 void attr_class::load_type_info(Symbol cl) {
   if (typedeclarations->probe(cl)) {
-    typedeclarations->lookup(cl)->identifiers->addid(name, &type_decl);
+    typedeclarations->lookup(cl)->O->addid(name, &type_decl);
   } else {
     cerr << "Not found" << endl;
   }
@@ -369,7 +369,7 @@ void attr_class::load_type_info(Symbol cl) {
 
 void method_class::load_type_info(Symbol cl) {
   if (typedeclarations->probe(cl)) {
-    typedeclarations->lookup(cl)->methods->addid(name, this);
+    typedeclarations->lookup(cl)->M->addid(name, this);
   } else {
     cerr << "Not found" << endl;
   }
@@ -381,39 +381,39 @@ SymbolTable<Symbol, Symbol>* O(Symbol cl) {
 };
 */
 
-Symbol object_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+Symbol object_class::infer_type(TypeEnvironment e, Symbol c) {
   return Object;
 };
 
 // perhaps this can be left as null
-Symbol no_expr_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+Symbol no_expr_class::infer_type(TypeEnvironment e, Symbol c) {
   return NULL;
 };
 
-Symbol isvoid_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+Symbol isvoid_class::infer_type(TypeEnvironment e, Symbol c) {
   return Bool;
 };
 
 //TODO according to grammar, new can't be passed params, but check again
-Symbol new__class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+Symbol new__class::infer_type(TypeEnvironment e, Symbol c) {
   return type_name;
 };
 
-Symbol string_const_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+Symbol string_const_class::infer_type(TypeEnvironment e, Symbol c) {
   return Str;
 };
 
-Symbol bool_const_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+Symbol bool_const_class::infer_type(TypeEnvironment e, Symbol c) {
   return Bool;
 };
 
-Symbol int_const_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
+Symbol int_const_class::infer_type(TypeEnvironment e, Symbol c) {
   return Int;
 };
 
 // complement
-Symbol comp_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
-  if (e1->infer_type(a,b,c) == Bool) {
+Symbol comp_class::infer_type(TypeEnvironment e, Symbol c) {
+  if (e1->infer_type(e, c) == Bool) {
     return Bool;
   } else {
     cerr << "type error" << endl;
@@ -421,18 +421,8 @@ Symbol comp_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol,
   }
 };
 
-Symbol leq_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
-  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
-    return Bool;
-  } else {
-    cerr << "type error" << endl;
-    return NULL;
-  }
-};
-
-// same as leq
-Symbol eq_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
-  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+Symbol leq_class::infer_type(TypeEnvironment e, Symbol c) {
+  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Bool;
   } else {
     cerr << "type error" << endl;
@@ -441,8 +431,8 @@ Symbol eq_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, T
 };
 
 // same as leq
-Symbol lt_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
-  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+Symbol eq_class::infer_type(TypeEnvironment e, Symbol c) {
+  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Bool;
   } else {
     cerr << "type error" << endl;
@@ -450,8 +440,18 @@ Symbol lt_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, T
   }
 };
 
-Symbol neg_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
-  if (e1->infer_type(a,b,c) == Int) {
+// same as leq
+Symbol lt_class::infer_type(TypeEnvironment e, Symbol c) {
+  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+    return Bool;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+Symbol neg_class::infer_type(TypeEnvironment e, Symbol c) {
+  if (e1->infer_type(e, c) == Int) {
     return Int;
   } else {
     cerr << "type error" << endl;
@@ -459,28 +459,8 @@ Symbol neg_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, 
   }
 };
 
-Symbol divide_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
-  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
-    return Int;
-  } else {
-    cerr << "type error" << endl;
-    return NULL;
-  }
-};
-
-// same as divide
-Symbol mul_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
-  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
-    return Int;
-  } else {
-    cerr << "type error" << endl;
-    return NULL;
-  }
-};
-
-// same as divide
-Symbol sub_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
-  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+Symbol divide_class::infer_type(TypeEnvironment e, Symbol c) {
+  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
     cerr << "type error" << endl;
@@ -489,8 +469,28 @@ Symbol sub_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, 
 };
 
 // same as divide
-Symbol plus_class::infer_type(SymbolTable<Symbol, Symbol> a, SymbolTable<Symbol, TypeDeclarations> b, Symbol c) {
-  if (e1->infer_type(a,b,c) == Int && e2->infer_type(a,b,c) == Int) {
+Symbol mul_class::infer_type(TypeEnvironment e, Symbol c) {
+  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+    return Int;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+// same as divide
+Symbol sub_class::infer_type(TypeEnvironment e, Symbol c) {
+  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+    return Int;
+  } else {
+    cerr << "type error" << endl;
+    return NULL;
+  }
+};
+
+// same as divide
+Symbol plus_class::infer_type(TypeEnvironment e, Symbol c) {
+  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
     return Int;
   } else {
     cerr << "type error" << endl;
