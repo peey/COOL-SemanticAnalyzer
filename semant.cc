@@ -391,11 +391,27 @@ void class__class::semant(TypeEnvironment *e) {
 }
 
 void attr_class::semant(TypeEnvironment *e, Symbol c) {
-  cout << "symbol: " << e << " type: " << init->infer_type(e, c) << endl;
+  //works for both [Attr-Init] and [Attr-No-Init]
+  Symbol inferred = init->infer_type(e, c);
+  assert(classtable->is_supertype_of(type_decl, inferred, c));
 }
 
 void method_class::semant(TypeEnvironment *e, Symbol c) {
-  cout << "ciao" << endl;
+  //[Method]
+  e->O->enterscope();
+  for (int i = 0; i < formals->len(); i++) {
+    Formal f = formals->nth(i);
+    f->semant(e, c); // Loads each formal into the environment
+    //TODO check that params aren't duplicate
+  }
+  // now we can evaluate expressions
+  Symbol inferred = expr->infer_type(e, c);
+  assert(classtable->is_supertype_of(return_type, inferred, c));
+  e->O->exitscope();
+}
+
+void formal_class::semant(TypeEnvironment *e, Symbol c) {
+  e->O->addid(name, &type_decl);
 }
 
 void class__class::load_type_info(Symbol cl) {
@@ -442,6 +458,8 @@ Symbol object_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (result != NULL) {
     //cout << "Lookup: " << *result << endl;
     return *result;
+  } else if (name == self) {
+    return SELF_TYPE;
   } else {
     cerr << "semantic error: used but not defined" << endl;
     return No_type;
@@ -572,7 +590,15 @@ Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
   return T2;
 };
 
-Symbol block_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+Symbol block_class::infer_type(TypeEnvironment *e, Symbol c) {
+  // [Sequence]
+  Symbol Tn = No_type;
+  for (int i = 0; i < body->len(); i++) {
+    Expression exp = body->nth(i);
+    Tn = exp->infer_type(e, c); // this call is required because even though we're discarding the returned type, it has the necessary asserts
+  }
+  return Tn;
+};
 
 Symbol typcase_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
 

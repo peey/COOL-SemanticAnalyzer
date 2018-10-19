@@ -101,11 +101,13 @@ Formals get_formals(); \
 Symbol get_return_type();
 
 #define Formal_EXTRAS                              \
-virtual void dump_with_types(ostream&,int) = 0;
+virtual void dump_with_types(ostream&,int) = 0; \
+virtual void semant(TypeEnvironment *e, Symbol c) = 0;
 
 
 #define formal_EXTRAS                           \
-void dump_with_types(ostream&,int);
+void dump_with_types(ostream&,int); \
+void semant(TypeEnvironment *e, Symbol c);
 
 
 #define Case_EXTRAS                             \
