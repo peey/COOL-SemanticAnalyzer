@@ -21,6 +21,16 @@ class C {
     } pool;
    }
 	};
+
+	init2(x : Int, y : Bool) : Bool {
+   {
+     let x : Bool <- b in {
+        x <- true;
+        y <- false;
+        b <- x;
+     };
+   }
+	};
 };
 
 class D inherits C {
