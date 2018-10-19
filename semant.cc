@@ -4,6 +4,7 @@
 #include "semant.h"
 #include "utilities.h"
 #include <cassert>
+#include <set>
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -131,6 +132,45 @@ bool class__class::is_subtype_of(ClassTable ct, Symbol supertype) {
 /**
  * End type loading
  */
+
+std::set<Symbol> queued_classes;
+
+bool process_class(ClassTable *ct, Classes classes, Symbol s) {
+  //cout << "processing " << s << endl;
+  if(queued_classes.find(s) != queued_classes.end()) { // we have a cycle
+    for (int i = 0; i < classes->len(); i++) {
+      Class_ cl = classes->nth(i);
+      if (cl->get_name() == s) {
+        ct->semant_error();
+        return false;
+      }
+    }
+    return false; // will never be reached
+  } else {
+    for (int i = 0; i < classes->len(); i++) {
+      Class_ cl = classes->nth(i);
+      if (cl->get_name() == s) {
+        ct->table2.insert({cl->get_name(), cl});
+
+        InheritanceTree *parent = ct->tree->find(cl->get_parent());
+        if (parent == NULL) {
+          queued_classes.insert(cl->get_name()); //push
+          process_class(ct, classes, cl->get_parent());
+          queued_classes.erase(queued_classes.find(cl->get_name())); //pop
+          parent = ct->tree->find(cl->get_parent());
+        }
+        //cout << "class: " << cl->get_name() << " parent: " << cl->get_parent() << endl;
+        //cout << "parent: "  << parent->get_symbol() << endl;
+        parent->add_child(cl->get_name());
+        //cout << "core dumped yet?" << endl;
+        //processed_classes();
+      }
+    }
+    //cout << "processed " << s << endl;
+    return true;
+  }
+}
+
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
     /* Fill this in */
@@ -139,17 +179,12 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     install_basic_classes();
 
     for (int i = 0; i < classes->len(); i++) {
-      //cout << i << endl;
       Class_ cl = classes->nth(i);
-      //table->addid(cl->get_name(), &cl);
-      table2.insert({cl->get_name(), cl});
-      InheritanceTree *parent = tree->find(cl->get_parent());
-      //cout << "class: " << cl->get_name() << " parent: " << cl->get_parent() << endl;
-      //cout << "parent: "  << parent->get_symbol() << endl;
-      parent->add_child(cl->get_name());
-      //cout << "core dumped yet?" << endl;
+      if (tree->find(cl->get_name()) == NULL) // already processed
+        process_class(this, classes, cl->get_name());
     }
 }
+
 
 void ClassTable::install_basic_classes() {
 

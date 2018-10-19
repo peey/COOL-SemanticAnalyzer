@@ -1,52 +1,67 @@
-class C {
-	a : Int <- 1;
-	b : Bool <- a <= 10;
-	init(x : Int, y : Bool) : C {
-       {
-		a <- x;
-		b <- y;
-    while y loop {
-      a <- a + x;
-    } pool;
-    self;
-   }
-	};
 
-	init2(x : Int, y : Bool) : Object {
-       {
-		a <- x;
-		b <- y;
-    while y loop {
-      a <- a + x;
-    } pool;
-    init(x, y);
-    init3(x, y);
-   }
-	};
+class Bazz inherits IO {
 
-	init3(x : Int, y : Bool) : Object {
-   {
-     let x : Bool <- b in {
-        x <- true;
-        y <- false;
-        b <- x;
-     };
-     case self of
-        n : D => (new C);
-        n : C => (new D);
-        n : Main => (new C);
-           esac;
-   }
-	};
+     h : Int <- 1;
+
+     g : Foo  <- case self of
+		     	n : Bazz => (new Foo);
+		     	n : Razz => (new Bar);
+			n : Foo  => (new Razz);
+			n : Bar => n;
+		  esac;
+
+     i : Object <- printh();
+
+     printh() : Int { { out_int(h); 0; } };
+
+     doh() : Int { (let i: Int <- h in { h <- h + 1; i; } ) };
 };
 
-class D inherits C {
-  d: Int;
+class Foo inherits Bazz {
+     a : Razz <- case self of
+		      n : Razz => (new Bar);
+		      n : Foo => (new Razz);
+		      n : Bar => n;
+   	         esac;
+
+     b : Int <- a.doh() + g.doh() + doh() + printh();
+
+     doh() : Int { (let i : Int <- h in { h <- h + 2; i; } ) };
+
 };
 
-Class Main inherits IO {
-	main():C {
-	  (new C).init(1,true)
+class Razz inherits Foo {
 
-	};
+     e : Bar <- case self of
+		  n : Razz => (new Bar);
+		  n : Bar => n;
+		esac;
+
+     f : Int <- a@Bazz.doh() + g.doh() + e.doh() + doh() + printh();
+
 };
+
+
+class Bar inherits Razz {
+
+     c : Int <- doh();
+
+     d : Object <- printh();
+};
+
+
+(* scary . . . *)
+class Main {
+  a : Bazz <- new Bazz;
+  b : Foo <- new Foo;
+  c : Razz <- new Razz;
+  d : Bar <- new Bar;
+
+  main(): String { "do nothing" };
+
+};
+
+
+
+
+
