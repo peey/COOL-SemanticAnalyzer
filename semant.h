@@ -99,6 +99,7 @@ public:
   SymbolTable<Symbol, Class_> *table;
   std::map<Symbol, Class_> table2;
   InheritanceTree *tree;
+  void init_attr_meth(Class_ cl);
   Class_ lookup_class(Symbol s) {
     auto it = table2.find(s);
     if (it == table2.end()) {

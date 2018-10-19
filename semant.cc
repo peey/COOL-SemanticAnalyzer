@@ -409,35 +409,18 @@ void program_class::semant()
 
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
-
+    classtable->init_attr_meth(classtable->lookup_class(Object));
+    classtable->init_attr_meth(classtable->lookup_class(Int));
+    classtable->init_attr_meth(classtable->lookup_class(Str));
+    classtable->init_attr_meth(classtable->lookup_class(Bool));
+    classtable->init_attr_meth(classtable->lookup_class(IO));
 
     //classtable->tree->levels(0);
 
     // set up attribute and method type environments
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
-      typedeclarations->addid(cl->get_name(), new TypeEnvironment());
-
-      //cout << "Looking up ancestors of: " << cl->get_name() << endl;
-      List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl->get_name());
-      List<InheritanceTree> *lst = ancestors;
-      //cout << "Got: " << lst << endl;
-
-      while (lst != NULL) {
-        // inherited attributes can't be redefined (section 5, cool manual)
-        Symbol ancestor_name = lst->hd()->get_symbol();
-        Class_ ancestor_class = classtable->lookup_class(ancestor_name);
-
-        /*
-        cout << "marco" << endl;
-        cout << "One ancestor " << ancestor_name << endl;
-        cout << "One ancestor " << ancestor_class << endl;
-        cout << "One ancestor " << ancestor_class->get_name() << endl;
-        cout << "polo 1" << endl;
-        */
-        ancestor_class->load_type_info(cl->get_name());
-        lst = lst->tl();
-      }
+      classtable->init_attr_meth(cl);
     }
 
     /* some semantic analysis code may go here */
@@ -452,6 +435,31 @@ void program_class::semant()
       cerr << "Compilation halted due to static semantic errors." << endl;
       exit(1);
     }
+}
+
+void ClassTable::init_attr_meth(Class_ cl) {
+  typedeclarations->addid(cl->get_name(), new TypeEnvironment());
+
+  //cout << "Looking up ancestors of: " << cl->get_name() << endl;
+  List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl->get_name());
+  List<InheritanceTree> *lst = ancestors;
+  //cout << "Got: " << lst << endl;
+
+  while (lst != NULL) {
+    // inherited attributes can't be redefined (section 5, cool manual)
+    Symbol ancestor_name = lst->hd()->get_symbol();
+    Class_ ancestor_class = classtable->lookup_class(ancestor_name);
+
+    /*
+    cout << "marco" << endl;
+    cout << "One ancestor " << ancestor_name << endl;
+    cout << "One ancestor " << ancestor_class << endl;
+    cout << "One ancestor " << ancestor_class->get_name() << endl;
+    cout << "polo 1" << endl;
+    */
+    ancestor_class->load_type_info(cl->get_name());
+    lst = lst->tl();
+  }
 }
 
 void class__class::semant(TypeEnvironment *e) {

@@ -57,10 +57,11 @@ class Main {
   c : Razz <- new Razz;
   d : Bar <- new Bar;
 
-  main(): String { "do nothing" };
-
+  main(): Object {
+5.copy()
 };
 
+};
 
 
 
