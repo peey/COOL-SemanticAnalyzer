@@ -125,12 +125,18 @@ Expression set_type(Symbol s) { type = s; return this; } \
 virtual void dump_with_types(ostream&,int) = 0;  \
 void dump_type(ostream&, int);               \
 Expression_class() { type = (Symbol) NULL; } \
-virtual Symbol infer_type(TypeEnvironment *, Symbol) = 0; // O, M, and C
+virtual Symbol infer_type(TypeEnvironment *, Symbol) = 0; \
+virtual Symbol ias_type(TypeEnvironment *, Symbol) = 0; // O, M, and C are in args. ias = infer and set
 //todo: make the expression_class constructor return no_type instead?
 
 #define Expression_SHARED_EXTRAS           \
 void dump_with_types(ostream&,int); \
-Symbol infer_type(TypeEnvironment *e, Symbol c);
+Symbol infer_type(TypeEnvironment *e, Symbol c); \
+Symbol ias_type(TypeEnvironment *e, Symbol c) { \
+  Symbol s = infer_type(e, c); \
+  set_type(s); \
+  return s; \
+};
 
 
 #endif

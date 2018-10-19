@@ -515,7 +515,7 @@ Symbol int_const_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 // complement
 Symbol comp_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->infer_type(e, c) == Bool) {
+  if (e1->ias_type(e, c) == Bool) {
     return Bool;
   } else {
     cerr << "type error comp" << endl;
@@ -524,7 +524,7 @@ Symbol comp_class::infer_type(TypeEnvironment *e, Symbol c) {
 };
 
 Symbol leq_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+  if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Bool;
   } else {
     cerr << "type error leq" << endl;
@@ -534,7 +534,7 @@ Symbol leq_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 // same as leq
 Symbol eq_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+  if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Bool;
   } else {
     cerr << "type error eq" << endl;
@@ -544,7 +544,7 @@ Symbol eq_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 // same as leq
 Symbol lt_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+  if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Bool;
   } else {
     cerr << "type error lt" << endl;
@@ -553,7 +553,7 @@ Symbol lt_class::infer_type(TypeEnvironment *e, Symbol c) {
 };
 
 Symbol neg_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->infer_type(e, c) == Int) {
+  if (e1->ias_type(e, c) == Int) {
     return Int;
   } else {
     cerr << "type error neg" << endl;
@@ -562,7 +562,7 @@ Symbol neg_class::infer_type(TypeEnvironment *e, Symbol c) {
 };
 
 Symbol divide_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+  if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
     cerr << "type error divide" << endl;
@@ -572,7 +572,7 @@ Symbol divide_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 // same as divide
 Symbol mul_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+  if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
     cerr << "type error mul" << endl;
@@ -582,7 +582,7 @@ Symbol mul_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 // same as divide
 Symbol sub_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+  if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
     cerr << "type error sub" << endl;
@@ -592,7 +592,7 @@ Symbol sub_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 // same as divide
 Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->infer_type(e, c) == Int && e2->infer_type(e, c) == Int) {
+  if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
     cerr << "type error plus" << endl;
@@ -602,11 +602,11 @@ Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
   Symbol T0dash = type_decl; // SELF_TYPE is accounted for here
-  Symbol T1 = init->infer_type(e, c);
+  Symbol T1 = init->ias_type(e, c);
   assert(classtable->is_supertype_of(T0dash, T1, c));
   e->O->enterscope();
   e->O->addid(identifier, &T0dash);
-  Symbol T2 = body->infer_type(e, c);
+  Symbol T2 = body->ias_type(e, c);
   e->O->exitscope();
   return T2;
 };
@@ -616,7 +616,7 @@ Symbol block_class::infer_type(TypeEnvironment *e, Symbol c) {
   Symbol Tn = No_type;
   for (int i = 0; i < body->len(); i++) {
     Expression exp = body->nth(i);
-    Tn = exp->infer_type(e, c); // this call is required because even though we're discarding the returned type, it has the necessary asserts
+    Tn = exp->ias_type(e, c); // this call is required because even though we're discarding the returned type, it has the necessary asserts
   }
   return Tn;
 };
@@ -625,9 +625,9 @@ Symbol typcase_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;}
 
 Symbol loop_class::infer_type(TypeEnvironment *e, Symbol c) {
   // The manual gives [Loop-False] and [Loop-True] but we can't always determine what the condition will evaluate to at static time, so we take the lub/lowest_common_ancestor of both types
-  Symbol pred_type = pred->infer_type(e, c);
+  Symbol pred_type = pred->ias_type(e, c);
   assert(classtable->is_supertype_of(Bool, pred_type, c)); // this isn't specified in the manual explicitly, but implicitly having a false and a true rule means this
-  return classtable->lowest_common_ancestor(pred_type, body->infer_type(e, c), c);
+  return classtable->lowest_common_ancestor(pred_type, body->ias_type(e, c), c);
 };
 
 Symbol cond_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
