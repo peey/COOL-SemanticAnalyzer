@@ -299,6 +299,26 @@ ostream& ClassTable::semant_error()
     return error_stream;
 } 
 
+bool ClassTable::is_supertype_of(Symbol t1, Symbol t2, Symbol c) {
+  if (t2 == No_type) return true;
+
+  if (t1 == SELF_TYPE && t2 == SELF_TYPE) return true; // cool manual section 4.1 says SELF_TYPEx <= SELF_TYPEx, presumably because both were encountered in the same class environment
+
+  if (t2 == SELF_TYPE) {
+    return is_supertype_of(t1, c, c);
+  }
+
+  if (t1 == SELF_TYPE) {
+    return false; // the only cases where this is true have already been covered above
+  }
+
+  InheritanceTree *node1 = tree->find(t1);
+  if (node1->find(t2) != NULL) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 /*   This is the entry point to the semantic checker.
 
@@ -386,9 +406,9 @@ Symbol object_class::infer_type(TypeEnvironment *e, Symbol c) {
   return Object;
 };
 
-// perhaps this can be left as null
+// works for empty let declarations
 Symbol no_expr_class::infer_type(TypeEnvironment *e, Symbol c) {
-  return NULL;
+  return No_type;
 };
 
 Symbol isvoid_class::infer_type(TypeEnvironment *e, Symbol c) {
@@ -418,7 +438,7 @@ Symbol comp_class::infer_type(TypeEnvironment *e, Symbol c) {
     return Bool;
   } else {
     cerr << "type error" << endl;
-    return NULL;
+    return No_type;
   }
 };
 
@@ -427,7 +447,7 @@ Symbol leq_class::infer_type(TypeEnvironment *e, Symbol c) {
     return Bool;
   } else {
     cerr << "type error" << endl;
-    return NULL;
+    return No_type;
   }
 };
 
@@ -437,7 +457,7 @@ Symbol eq_class::infer_type(TypeEnvironment *e, Symbol c) {
     return Bool;
   } else {
     cerr << "type error" << endl;
-    return NULL;
+    return No_type;
   }
 };
 
@@ -447,7 +467,7 @@ Symbol lt_class::infer_type(TypeEnvironment *e, Symbol c) {
     return Bool;
   } else {
     cerr << "type error" << endl;
-    return NULL;
+    return No_type;
   }
 };
 
@@ -456,7 +476,7 @@ Symbol neg_class::infer_type(TypeEnvironment *e, Symbol c) {
     return Int;
   } else {
     cerr << "type error" << endl;
-    return NULL;
+    return No_type;
   }
 };
 
@@ -465,7 +485,7 @@ Symbol divide_class::infer_type(TypeEnvironment *e, Symbol c) {
     return Int;
   } else {
     cerr << "type error" << endl;
-    return NULL;
+    return No_type;
   }
 };
 
@@ -475,7 +495,7 @@ Symbol mul_class::infer_type(TypeEnvironment *e, Symbol c) {
     return Int;
   } else {
     cerr << "type error" << endl;
-    return NULL;
+    return No_type;
   }
 };
 
@@ -485,7 +505,7 @@ Symbol sub_class::infer_type(TypeEnvironment *e, Symbol c) {
     return Int;
   } else {
     cerr << "type error" << endl;
-    return NULL;
+    return No_type;
   }
 };
 
@@ -495,21 +515,31 @@ Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
     return Int;
   } else {
     cerr << "type error" << endl;
-    return NULL;
+    return No_type;
   }
 };
 
-// same as divide
 Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
-  Symbol T0dash = type_decl;
-  if (type_decl == SELF_TYPE) {
-    //TODO
-  }
+  Symbol T0dash = type_decl; // SELF_TYPE is accounted for here
   Symbol T1 = init->infer_type(e, c);
-  assert(classtable->is_supertype_of(T0dash, T1));
+  assert(classtable->is_supertype_of(T0dash, T1, c));
   e->O->enterscope();
   e->O->addid(identifier, &T0dash);
   Symbol T2 = body->infer_type(e, c);
   e->O->exitscope();
   return T2;
 };
+
+Symbol block_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+
+Symbol typcase_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+
+Symbol loop_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+
+Symbol cond_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+
+Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+
+Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+
+Symbol assign_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
