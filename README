@@ -7,8 +7,13 @@ We need to expose a few members of the type "Class_" since we need access to par
 
 Next, we initialize the type environments O and M (TypeDeclarations->identifiers, TypeDeclarations->methods, respectively) by walking through class features.
 
-After this annotating the AST with correct types is as straightforward as implementing all the inference rules. I've already implemented all of the basic rules.
+This is done so that a parent class is processed before a class which inherits it. If there is a cylcic dependency, it is found and reported.
 
-Lastly we'll handle SELF_TYPE and any non-typecheck semantic analyses, this isn't yet done.
+After this annotating the AST with correct types is as straightforward as implementing all the inference rules.
 
-The submission is incomplete but it compiles. I will submit again to the late deadline.
+We also handle SELF_TYPE and are able to recover from type errors by using the strategy of assigning `No_type` to the expressions which give a type error. This is done in ClassTable::is_supertype_of which does this with the help of inheritance tree.
+
+Changes since backpack submission
+ - Added remaining typecheck rules (let, block, typcase, branch, loop, cond, dispatch, static_dispatch, assign)
+ - Add `is_subtype_of` and `lowest_common_ancestor` (least upper bound) routines
+ - Detect cyclic dependencies, absence of main class 

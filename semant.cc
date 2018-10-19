@@ -141,7 +141,7 @@ bool process_class(ClassTable *ct, Classes classes, Symbol s) {
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
       if (cl->get_name() == s) {
-        ct->semant_error();
+        ct->semant_error(cl);
         return false;
       }
     }
@@ -423,6 +423,11 @@ void program_class::semant()
       classtable->init_attr_meth(cl);
     }
 
+    if (classtable->tree->find(Main) == NULL) {
+      classtable->semant_error();
+      cerr << "Class Main is not defined." << endl;
+    }
+
     /* some semantic analysis code may go here */
     //for every method, and attribute (with init) in every class, analyze
     for (int i = 0; i < classes->len(); i++) {
@@ -557,6 +562,7 @@ Symbol no_expr_class::infer_type(TypeEnvironment *e, Symbol c) {
 };
 
 Symbol isvoid_class::infer_type(TypeEnvironment *e, Symbol c) {
+  e1->ias_type(e, c);
   return Bool;
 };
 
