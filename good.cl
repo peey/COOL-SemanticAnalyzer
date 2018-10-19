@@ -37,7 +37,7 @@ class D inherits C {
   d: Int;
 };
 
-Class Main {
+Class Main inherits IO {
 	main():C {
 	  (new C).init(1,true)
 	};

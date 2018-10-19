@@ -14,8 +14,6 @@ int main(int argc, char *argv[]) {
   handle_flags(argc,argv);
   ast_yyparse();
   ast_root->semant();
-  /*
   ast_root->dump_with_types(cout, 0);
-  */
 }
 

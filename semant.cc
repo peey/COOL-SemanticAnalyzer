@@ -139,12 +139,15 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     install_basic_classes();
 
     for (int i = 0; i < classes->len(); i++) {
+      //cout << i << endl;
       Class_ cl = classes->nth(i);
-      table->addid(cl->get_name(), &cl);
+      //table->addid(cl->get_name(), &cl);
       table2.insert({cl->get_name(), cl});
       InheritanceTree *parent = tree->find(cl->get_parent());
-      //cout << "parent: " << cl->get_parent() << endl;
+      //cout << "class: " << cl->get_name() << " parent: " << cl->get_parent() << endl;
+      //cout << "parent: "  << parent->get_symbol() << endl;
       parent->add_child(cl->get_name());
+      //cout << "core dumped yet?" << endl;
     }
 }
 
@@ -253,13 +256,13 @@ void ClassTable::install_basic_classes() {
   table->addid(Object, &Object_class);
   table2.insert({Object, Object_class});
   table->addid(Str, &Str_class);
-  table2.insert({Object, Object_class});
+  table2.insert({Str, Str_class});
   table->addid(Int, &Int_class);
-  table2.insert({Object, Object_class});
+  table2.insert({Int, Int_class});
   table->addid(Bool, &Bool_class);
-  table2.insert({Object, Object_class});
+  table2.insert({Bool, Bool_class});
   table->addid(IO, &IO_class);
-  table2.insert({Object, Object_class});
+  table2.insert({IO, IO_class});
 
   tree = new InheritanceTree(Object);
   tree->add_child(Str);
@@ -324,8 +327,14 @@ bool ClassTable::is_supertype_of(Symbol t1, Symbol t2, Symbol c) {
 Symbol ClassTable::lowest_common_ancestor(Symbol a, Symbol b, Symbol c) {
   //citation: lowest common ancestor algorithm refered from https://stackoverflow.com/a/6342546/1412255. Implementation is mine.
   // TODO verify self type logic 
-  List<InheritanceTree> *chain_a = tree->ancestor_chain(a == SELF_TYPE? c : a);
-  List<InheritanceTree> *chain_b = tree->ancestor_chain(b == SELF_TYPE? c : b);
+  a = a == SELF_TYPE? c : a;
+  b = b == SELF_TYPE? c : b;
+
+  if (a == No_type) return b;
+  if (b == No_type) return a;
+
+  List<InheritanceTree> *chain_a = tree->ancestor_chain(a);
+  List<InheritanceTree> *chain_b = tree->ancestor_chain(b);
 
   List<InheritanceTree> *lst1 = chain_a;
   List<InheritanceTree> *lst2 = chain_b;
@@ -366,6 +375,7 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
+
     //classtable->tree->levels(0);
 
     // set up attribute and method type environments
@@ -381,9 +391,15 @@ void program_class::semant()
       while (lst != NULL) {
         // inherited attributes can't be redefined (section 5, cool manual)
         Symbol ancestor_name = lst->hd()->get_symbol();
-        Class_ ancestor_class = classtable->lookup_class (ancestor_name);
+        Class_ ancestor_class = classtable->lookup_class(ancestor_name);
 
-        //cout << "One ancestor " << ancestor_name << endl;
+        /*
+        cout << "marco" << endl;
+        cout << "One ancestor " << ancestor_name << endl;
+        cout << "One ancestor " << ancestor_class << endl;
+        cout << "One ancestor " << ancestor_class->get_name() << endl;
+        cout << "polo 1" << endl;
+        */
         ancestor_class->load_type_info(cl->get_name());
         lst = lst->tl();
       }
@@ -413,7 +429,7 @@ void class__class::semant(TypeEnvironment *e) {
 
 void attr_class::semant(TypeEnvironment *e, Symbol c) {
   //works for both [Attr-Init] and [Attr-No-Init]
-  Symbol inferred = init->infer_type(e, c);
+  Symbol inferred = init->ias_type(e, c);
   assert(classtable->is_supertype_of(type_decl, inferred, c));
 }
 
@@ -426,7 +442,7 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
     //TODO check that params aren't duplicate
   }
   // now we can evaluate expressions
-  Symbol inferred = expr->infer_type(e, c);
+  Symbol inferred = expr->ias_type(e, c);
   assert(classtable->is_supertype_of(return_type, inferred, c));
   e->O->exitscope();
 }
@@ -437,6 +453,7 @@ void formal_class::semant(TypeEnvironment *e, Symbol c) {
 
 void class__class::load_type_info(Symbol cl) {
   //cout << "Class being processed: " << name << endl;
+  //cout << "polo 2" << endl;
   for (int i = 0; i < features->len(); i++) {
     Feature f = features->nth(i);
     f->load_type_info(cl);
@@ -618,6 +635,7 @@ Symbol block_class::infer_type(TypeEnvironment *e, Symbol c) {
     Expression exp = body->nth(i);
     Tn = exp->ias_type(e, c); // this call is required because even though we're discarding the returned type, it has the necessary asserts
   }
+  //cout << "set it to " << Tn << endl;
   return Tn;
 };
 
@@ -630,7 +648,11 @@ Symbol loop_class::infer_type(TypeEnvironment *e, Symbol c) {
   return classtable->lowest_common_ancestor(pred_type, body->ias_type(e, c), c);
 };
 
-Symbol cond_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+Symbol cond_class::infer_type(TypeEnvironment *e, Symbol c) {
+  //[If-True] and [If-False]
+  assert(classtable->is_supertype_of(Bool, pred->ias_type(e, c), c));
+  return classtable->lowest_common_ancestor(then_exp->ias_type(e, c), else_exp->ias_type(e, c), c); // takes care of no else
+};
 
 Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
 

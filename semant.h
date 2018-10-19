@@ -100,7 +100,15 @@ public:
   std::map<Symbol, Class_> table2;
   InheritanceTree *tree;
   Class_ lookup_class(Symbol s) {
-    return table2.find(s)->second;
+    auto it = table2.find(s);
+    if (it == table2.end()) {
+      error_stream << "looked up class '" << s << "' does not exist in the table" << endl;
+      return NULL; //TODO
+    } else {
+      Class_ cl = table2.find(s)->second;
+      //cout << "marco -1" << endl;
+      return cl;
+    }
   };
   bool is_supertype_of(Symbol t1, Symbol t2, Symbol c);
   Symbol lowest_common_ancestor(Symbol a, Symbol b, Symbol c);
