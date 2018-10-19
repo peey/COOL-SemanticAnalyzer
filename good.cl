@@ -24,13 +24,18 @@ class C {
    }
 	};
 
-	init3(x : Int, y : Bool) : Bool {
+	init3(x : Int, y : Bool) : Object {
    {
      let x : Bool <- b in {
         x <- true;
         y <- false;
         b <- x;
      };
+     case self of
+        n : D => (new C);
+        n : C => (new D);
+        n : Main => (new C);
+           esac;
    }
 	};
 };
@@ -42,5 +47,6 @@ class D inherits C {
 Class Main inherits IO {
 	main():C {
 	  (new C).init(1,true)
+
 	};
 };

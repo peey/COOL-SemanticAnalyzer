@@ -113,11 +113,12 @@ virtual Symbol get_type();
 
 
 #define Case_EXTRAS                             \
-virtual void dump_with_types(ostream& ,int) = 0;
-
+virtual void dump_with_types(ostream& ,int) = 0;\
+virtual Symbol infer_type(TypeEnvironment *e, Symbol c) = 0;
 
 #define branch_EXTRAS                                   \
-void dump_with_types(ostream& ,int);
+void dump_with_types(ostream& ,int); \
+Symbol infer_type(TypeEnvironment *e, Symbol c);
 
 
 #define Expression_EXTRAS                    \

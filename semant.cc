@@ -643,7 +643,24 @@ Symbol block_class::infer_type(TypeEnvironment *e, Symbol c) {
   return Tn;
 };
 
-Symbol typcase_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+Symbol typcase_class::infer_type(TypeEnvironment *e, Symbol c) {
+  expr->ias_type(e, c);
+  Symbol lubresult = No_type;
+  for (int i = 0; i < cases->len(); i++) {
+    Case branch = cases->nth(i);
+    Symbol s = branch->infer_type(e, c); //note, I guess we don't need to set type here because branch_class is not an expression?
+    lubresult = classtable->lowest_common_ancestor(s, lubresult, c);
+  }
+  return lubresult;
+};
+
+Symbol branch_class::infer_type(TypeEnvironment *e, Symbol c) {
+  e->O->enterscope();
+  e->O->addid(name, &type_decl);
+  Symbol t = expr->ias_type(e, c);
+  e->O->exitscope();
+  return t;
+}
 
 Symbol loop_class::infer_type(TypeEnvironment *e, Symbol c) {
   // The manual gives [Loop-False] and [Loop-True] but we can't always determine what the condition will evaluate to at static time, so we take the lub/lowest_common_ancestor of both types
