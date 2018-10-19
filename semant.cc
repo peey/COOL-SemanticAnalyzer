@@ -658,4 +658,15 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;
 
 Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
 
-Symbol assign_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+Symbol assign_class::infer_type(TypeEnvironment *e, Symbol c) {
+  //[ASSIGN]
+  Symbol Tdash = expr->ias_type(e, c); 
+  Symbol *T = e->O->lookup(name); 
+  if (T != NULL) {
+    assert(classtable->is_supertype_of(*T, Tdash, c));
+    return Tdash;
+  } else {
+    cerr << "Use before define" << endl;
+    return No_type; //TODO
+  }
+};
