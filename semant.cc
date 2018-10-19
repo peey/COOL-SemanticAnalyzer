@@ -668,6 +668,10 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
 
   TypeEnvironment *edash = typedeclarations->lookup(T0dash);
 
+  if (edash == NULL) {
+    //TODO
+  }
+
   /*
   cout << "core dumped yet?" << endl;
   cout << "T0 " << edash << endl;
@@ -695,7 +699,36 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
   return Tnplus1;
 };
 
-Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {return No_type;};
+Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
+
+  Symbol T0 = expr->ias_type(e, c);
+
+  TypeEnvironment *edash = typedeclarations->lookup(type_name);
+
+  if (edash == NULL) {
+    //TODO
+  }
+
+  method_class *m =  edash->M->lookup(name);
+
+  Formals formals = m->get_formals();
+
+  assert(formals->len() == actual->len());
+
+  Symbol Tnplus1 = m->get_return_type();
+
+  if (Tnplus1 == SELF_TYPE) {
+    Tnplus1 = T0;
+  }
+
+  for (int i = 0; i < formals->len(); i++) {
+    Formal formal = formals->nth(i);
+    Expression a = actual->nth(i);
+    assert(classtable->is_supertype_of(formal->get_type(), a->ias_type(e, c), c));
+  }
+
+  return Tnplus1;
+};
 
 Symbol assign_class::infer_type(TypeEnvironment *e, Symbol c) {
   //[ASSIGN]
