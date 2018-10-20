@@ -586,6 +586,7 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
       if (classtable->assert_type_valid(*f->get_type(), c, this, false)) { // self type not permitted in function formals
         param_names.insert(f->get_name());
         // Loads each formal into the environment, does not load duplicate ones
+        /*
         Symbol _name = f->get_name();
         Symbol *_type_decl = f->get_type();
         if (semant_debug) {
@@ -595,10 +596,18 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
             cout << "i is: " << *e->O->lookup(idtable.add_string("i")) << endl;
           }
         }
-        e->O->addid(_name, _type_decl);
+        */
+        if (f->get_name() == self) {
+          classtable->semant_element_error(c, f);
+          cerr << "cannot use 'self' as a function parameter" << endl;
+        } else {
+          e->O->addid(f->get_name(), f->get_type());
+        }
+        /*
         if (semant_debug) {
           cout << "Added parameter " << _name << " as " << *e->O->lookup(_name) << endl;
         }
+        */
       } else {
         // error recovery strategy: add it to the environment but as an object
         e->O->addid(f->get_name(), &Object);
@@ -652,6 +661,10 @@ void attr_class::load_type_info(Symbol cl) {
       classtable->semant_element_error(cl, this);
       cerr << "Attribute " << cl << "::" << name << " already defined in an ancestor class" << endl;
     } else {
+      if (name == self) {
+        classtable->semant_element_error(cl, this);
+        cerr << "Can't use 'self' as an attribute" << endl;
+      }
       if(classtable->assert_type_valid(type_decl, cl, this, true)) { // self type is allowed in attr declarations
         typedeclarations->lookup(cl)->O->addid(name, &type_decl);
       } else {
@@ -872,7 +885,12 @@ Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
   Symbol T1 = init->ias_type(e, c);
   classtable->assert_supertype(T0dash, T1, c, this); // type error in init expression is localized, doesn't affect other things
   e->O->enterscope();
-  e->O->addid(identifier, &T0dash);
+  if (identifier == self) {
+    classtable->semant_element_error(c, this);
+    cerr << "Cannot declare 'self' in let binding" << endl;
+  } else {
+    e->O->addid(identifier, &T0dash);
+  }
   Symbol T2 = body->ias_type(e, c);
   e->O->exitscope();
   return T2;
@@ -917,7 +935,12 @@ Symbol branch_class::infer_type(TypeEnvironment *e, Symbol c) { // infers type a
     //error recovery: set it as object and continue
     e->O->addid(name, &Object);
   } else {
-    e->O->addid(name, &type_decl);
+    if (name == self) {
+      classtable->semant_element_error(c, this);
+      cerr << "Can't use self' as a Case branch variable" << endl;
+    } else {
+      e->O->addid(name, &type_decl);
+    }
   }
   Symbol t = expr->ias_type(e, c);
   e->O->exitscope();

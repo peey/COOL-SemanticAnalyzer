@@ -1,21 +1,29 @@
 Write-up for PA3
 ----------------
 
-There are three phases to the semantic checks
+# Overview
+
+There are two phases to the semantic checks
 
 ## Phase 1
 
-Here, simply all the provided classes are loaded. This powers the `assert_type_exists` method which is used in the other two phases.
+Here we just go through all the classes declared by the programmer and make a map between class names (symbols) and class body. 
+
+This is done because in the entire program, the classes are refered to using their names and not by passing the actual class object. This is close to how even in the AST, various places like parameter declarations all refer to the class by the name.
+
+This also powers the `assert_type_exists` method which is used in the other two phases.
+
 
 ## Phase 2
 
-Here, we walk through all the classes and 
-
-1. Build the InheritanceTree
-2.
-
-
 I've implemented an InheritanceTree class which holds the parent-child relation between classes. The design is clean and lets you get things like chain of ancestors (useful for attribute initialization) pretty easily.
+
+Here we use DFS to detect dependency cycles, and when there are none we start loading the classes into an inheritancetree by processing the ancestors first. 
+
+As we are building the inheritance tree, we process the features of the class and load them into identifier and method environments on a per-class basis.
+
+We also simultaneously class the type inference 
+
 
 We need to expose a few members of the type "Class_" since we need access to parent and current class information to build up the inheritance tree. 
 
