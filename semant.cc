@@ -733,10 +733,16 @@ Symbol leq_class::infer_type(TypeEnvironment *e, Symbol c) {
   }
 };
 
-// same as leq
 Symbol eq_class::infer_type(TypeEnvironment *e, Symbol c) {
-  e1->ias_type(e, c);
-  e2->ias_type(e, c);
+  Symbol t1 = e1->ias_type(e, c);
+  Symbol t2 = e2->ias_type(e, c);
+  //[Equal] if either t1 or t2 is in {Int, String, Bool} then other must be the same
+  if (t1 == Int || t2 == Int || t1 == Str || t2 == Str || t1 == Bool || t2 == Bool) {
+    if (t1 != t2) {
+      classtable->semant_element_error(c, this);
+      cerr << "Invalid equality comparison, " << t1 << " compared with " << t2 << endl;
+    }
+  }
   return Bool;
 };
 
