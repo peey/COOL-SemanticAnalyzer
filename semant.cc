@@ -585,7 +585,7 @@ void attr_class::load_type_info(Symbol cl) {
     }
     typedeclarations->lookup(cl)->O->addid(name, &type_decl);
   } else {
-    classtable->semant_error(cl);
+    classtable->semant_element_error(cl, this);
     cerr << "Symbol " << name << " Not found" << endl;
   }
 }
