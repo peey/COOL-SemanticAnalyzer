@@ -534,6 +534,7 @@ void program_class::semant()
       cerr << "Class Main is not defined." << endl;
     }
 
+    /* Phase 3*/
     /* some semantic analysis code may go here */
     //for every method, and attribute (with init) in every class, analyze and then set the types on the tree
     for (int i = 0; i < classes->len(); i++) {
