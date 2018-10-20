@@ -944,7 +944,8 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
 
   if (m == NULL) {
     classtable->semant_element_error(c, this);
-    cerr << "No function " << name << " found for the T0dash " << type_name << endl;
+    cerr << "No function " << name << " found for the expression of class" << type_name << endl;
+    return No_type; 
   }
 
   Formals formals = m->get_formals();
@@ -994,6 +995,7 @@ Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (m == NULL) {
     classtable->semant_element_error(c, this);
     cerr << "No function " << name << " found for the type " << type_name << endl;
+    return No_type;
   }
 
   Formals formals = m->get_formals();
