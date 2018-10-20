@@ -113,6 +113,13 @@ Formals method_class::get_formals() {
   return formals;
 }
 
+Symbol formal_class::get_name() {
+  return name;
+}
+
+Symbol formal_class::get_type() {
+  return type_decl;
+}
 
 /*
 bool class__class::is_subtype_of(ClassTable ct, Symbol supertype) {
@@ -557,9 +564,17 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
   std::set<Symbol> param_names;
   for (int i = 0; i < formals->len(); i++) {
     Formal f = formals->nth(i);
-    f->semant(e, c); // Loads each formal into the environment
     if (param_names.find(f->get_name()) == param_names.end()) {
-      param_names.insert(f->get_name());
+      if (classtable->assert_type_exists(f->get_type(), c, this)) {
+        param_names.insert(f->get_name());
+        // Loads each formal into the environment, does not load duplicate ones
+        Symbol name = f->get_name();
+        Symbol type_decl = f->get_type();
+        e->O->addid(name, &type_decl);
+      } else {
+        // error recovery strategy: add it to the environment but as an object
+        e->O->addid(f->get_name(), &Object);
+      }
     } else {
       classtable->semant_element_error(c, f);
       cerr << "Duplicate parameter name " << f->get_name() << endl;
@@ -569,18 +584,6 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
   Symbol inferred = expr->ias_type(e, c);
   classtable->assert_supertype(return_type, inferred, c); // error here would be localized
   e->O->exitscope();
-}
-
-void formal_class::semant(TypeEnvironment *e, Symbol c) {
-  e->O->addid(name, &type_decl);
-}
-
-Symbol formal_class::get_name() {
-  return name;
-}
-
-Symbol formal_class::get_type() {
-  return type_decl;
 }
 
 void class__class::load_type_info(Symbol cl) {
