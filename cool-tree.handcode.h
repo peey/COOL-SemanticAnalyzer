@@ -98,7 +98,8 @@ void semant(TypeEnvironment *e, Symbol c);
 
 #define method_EXTRAS \
 Formals get_formals(); \
-Symbol get_return_type();
+Symbol get_return_type(); \
+bool check_compatibility(method_class *m);
 
 #define Formal_EXTRAS                              \
 virtual void dump_with_types(ostream&,int) = 0; \

@@ -580,20 +580,51 @@ void class__class::load_type_info(Symbol cl) {
 void attr_class::load_type_info(Symbol cl) {
   if (typedeclarations->probe(cl)) {
     if (typedeclarations->lookup(cl)->O->lookup(name) != NULL) {
-      classtable->semant_error(cl);
-      cerr << "Attribute "  << name << " already defined" << endl;
+      classtable->semant_error(cl, this);
+      cerr << "Attribute " << cl << "::" << name << " already defined in an ancestor class" << endl;
+    } else {
+      typedeclarations->lookup(cl)->O->addid(name, &type_decl);
     }
-    typedeclarations->lookup(cl)->O->addid(name, &type_decl);
   } else {
     classtable->semant_element_error(cl, this);
-    cerr << "Symbol " << name << " Not found" << endl;
+    cerr << "Class " <<  cl << " not found" << endl;
   }
 }
 
+bool method_class::check_compatibility(method_class *m) {
+  //see cool manual section 6
+  // number of args
+  if (m->formals->len() != formals->len()) {
+    return false;
+  }
+  // return types
+  if (m->return_type != return_type) {
+    return false;
+  }
+
+  // types, in order
+  for (int i = 0; i < formals->len(); i++) {
+    Formal f1 = formals->nth(i);
+    Formal f2 = m->formals->nth(i);
+    if (f1->get_type() != f2->get_type()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void method_class::load_type_info(Symbol cl) {
-  //cout << "Method: " << name <<  endl;
   if (typedeclarations->probe(cl)) {
-    typedeclarations->lookup(cl)->M->addid(name, this);
+    method_class *m = typedeclarations->lookup(cl)->M->lookup(name);
+    if (m != NULL) {
+      if (!check_compatibility(m)) {
+        classtable->semant_element_error(cl, this);
+        cerr << "Illegal method override from an ancestor class in "  << cl << "::" << name  << endl;
+      }
+    } else {
+      typedeclarations->lookup(cl)->M->addid(name, this);
+    }
   } else {
     classtable->semant_error(cl);
     cerr << "Method " << name << "Not found" << endl;
