@@ -122,8 +122,8 @@ public:
   bool assert_supertype(Symbol t1, Symbol t2, Symbol c) {
     bool result = is_supertype_of(t1, t2, c);
     if(!result) {
-      error_stream << "Type Error: "<< t1 << " is not a supertype of " << t2 << endl;
       semant_error(c);
+      error_stream << "Type Error: "<< t1 << " is not a supertype of " << t2 << endl;
     }
     return result;
   };
