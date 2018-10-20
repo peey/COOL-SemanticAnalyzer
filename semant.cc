@@ -142,6 +142,15 @@ bool process_class(ClassTable *ct, Classes classes, Symbol s) { // process_class
   std::deque<Symbol> queued_classes; // dfs stack
   queued_classes.push_front(s);
   Symbol c;
+
+  Class_ cl_for_error_reporting = NULL;
+  for (int i = 0; i < classes->len(); i++) { 
+    cl_for_error_reporting = classes->nth(i);
+    if (cl_for_error_reporting->get_name() == s) {
+      break;
+    }
+  }
+
   while (!queued_classes.empty()) {
     c = queued_classes.front();
     queued_classes.pop_front();
@@ -163,7 +172,7 @@ bool process_class(ClassTable *ct, Classes classes, Symbol s) { // process_class
 
 
     if (cl == NULL) {
-      ct->semant_error();
+      ct->semant_error(cl_for_error_reporting);
       cerr << "Class " << c  << " does not exist"<< endl;
       return false;
     }
@@ -172,7 +181,7 @@ bool process_class(ClassTable *ct, Classes classes, Symbol s) { // process_class
     if (unprocessed.find(c) != unprocessed.end()) { // if not already processed
       if (ct->tree->find(cl->get_parent()) == NULL) { // if parent is unprocessed, queue it
         if (find(queued_classes.begin(), queued_classes.end(), cl->get_parent()) != queued_classes.end())  { // if it's already on stack, we have a cyclic dependency
-          ct->semant_error();
+          ct->semant_error(cl_for_error_reporting);
           cerr << "Cyclic dependency found involving class " << cl->get_parent() << endl;
           return false;
         } else {
@@ -871,8 +880,8 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
   Formals formals = m->get_formals();
 
   if(formals->len() != actual->len()) {
-    cerr << "Mismatch between length of specified arguments and number of parameters that the function " << name << " accepts." << endl;
     classtable->semant_element_error(c, this);
+    cerr << "Mismatch between length of specified arguments and number of parameters that the function " << name << " accepts." << endl;
     return No_type; // unsure how to recover from this error, so we won't
   }
 
@@ -898,8 +907,8 @@ Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
   TypeEnvironment *edash = typedeclarations->lookup(type_name);
 
   if (edash == NULL) {
-    cerr << "The class " << type_name << " does not exist." << endl;
     classtable->semant_element_error(c, this);
+    cerr << "The class " << type_name << " does not exist." << endl;
     return No_type; // unsure how to recover from this error
   }
 
