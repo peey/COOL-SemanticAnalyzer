@@ -121,22 +121,9 @@ Symbol formal_class::get_type() {
   return type_decl;
 }
 
-/*
-bool class__class::is_subtype_of(ClassTable ct, Symbol supertype) {
-  if (!ct->table->probe(supertype)) {
-    error_stream << "lookup of invalid class" << end;
-    return false;
-  } else {
-    if (name == supertype) {
-      return true;
-    } else if (parent != No_class) {
-      return ct->table->lookup(parent)->is_subtype_of(supertype);
-    } else {
-      return false;
-    }
-  }
+Symbol branch_class::get_type() {
+  return type_decl;
 }
-*/
 
 /**
  * End type loading
@@ -216,10 +203,15 @@ bool process_class(ClassTable *ct, Classes classes, Symbol s) { // process_class
 }
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
-  /* Fill this in */
-  table = new SymbolTable<Symbol, Class_>();
-  table->enterscope();
+  /* Phase 1*/
   install_basic_classes();
+
+  for (int i = 0; i < classes->len(); i++) {
+    Class_ cl = classes->nth(i);
+    table2.insert({cl->get_name(), cl});
+    if (semant_debug) cout << " Yes indeed " << endl;
+  }
+  /* End Phase 1*/
 
   if (semant_debug) tree->levels(0);
 
@@ -340,15 +332,10 @@ void ClassTable::install_basic_classes() {
 						      no_expr()))),
 	       filename);
 
-  //table->addid(Object, &Object_class);
   table2.insert({Object, Object_class});
-  //table->addid(Str, &Str_class);
   table2.insert({Str, Str_class});
-  //table->addid(Int, &Int_class);
   table2.insert({Int, Int_class});
-  //table->addid(Bool, &Bool_class);
   table2.insert({Bool, Bool_class});
-  //table->addid(IO, &IO_class);
   table2.insert({IO, IO_class});
 
   tree = new InheritanceTree(Object);
@@ -422,6 +409,11 @@ bool ClassTable::is_supertype_of(Symbol t1, Symbol t2, Symbol c) {
   }
 }
 
+bool ClassTable::check_type_exists(Symbol t) {
+  if (t == prim_slot) return true; // prim slot is a valid type of primitive classes without a class table entry
+  return table2.find(t) != table2.end();
+}
+
 Symbol ClassTable::lowest_common_ancestor(Symbol a, Symbol b, Symbol c) {
   //citation: lowest common ancestor algorithm refered from https://stackoverflow.com/a/6342546/1412255. Implementation is mine.
   // TODO verify self type logic 
@@ -467,9 +459,11 @@ SymbolTable<Symbol, TypeEnvironment> *typedeclarations = new SymbolTable<Symbol,
 
 void program_class::semant()
 {
-    typedeclarations->enterscope(); // INIT
     initialize_constants();
 
+
+    /* Phase 2*/
+    typedeclarations->enterscope(); // INIT
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
@@ -504,7 +498,7 @@ void program_class::semant()
     }
 
     /* some semantic analysis code may go here */
-    //for every method, and attribute (with init) in every class, analyze
+    //for every method, and attribute (with init) in every class, analyze and then set the types on the tree
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
       cl->semant(typedeclarations->lookup(cl->get_name()));
@@ -553,7 +547,9 @@ void class__class::semant(TypeEnvironment *e) {
 void attr_class::semant(TypeEnvironment *e, Symbol c) {
   //works for both [Attr-Init] and [Attr-No-Init]
   Symbol inferred = init->ias_type(e, c);
-  classtable->assert_supertype(type_decl, inferred, c); // localized error if init expression doesn't match the declared type
+  if(classtable->check_type_exists(type_decl)) {
+    classtable->assert_supertype(type_decl, inferred, c); // localized error if init expression doesn't match the declared type
+  }
 }
 
 
@@ -620,7 +616,12 @@ void attr_class::load_type_info(Symbol cl) {
       classtable->semant_element_error(cl, this);
       cerr << "Attribute " << cl << "::" << name << " already defined in an ancestor class" << endl;
     } else {
-      typedeclarations->lookup(cl)->O->addid(name, &type_decl);
+      if(classtable->assert_type_exists(type_decl, cl, this)) {
+        typedeclarations->lookup(cl)->O->addid(name, &type_decl);
+      } else {
+        // recovery strategy: load it as an Object
+        typedeclarations->lookup(cl)->O->addid(name, &Object);
+      }
     }
   } else {
     classtable->semant_element_error(cl, this);
@@ -706,7 +707,11 @@ Symbol isvoid_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 //TODO according to grammar, new can't be passed params, but check again
 Symbol new__class::infer_type(TypeEnvironment *e, Symbol c) {
-  return type_name;
+  if(classtable->assert_type_exists(type_name, c, this)) {
+    return type_name;
+  } else {
+    return No_type; // recovery strategy: continue with no_type
+  }
 };
 
 Symbol string_const_class::infer_type(TypeEnvironment *e, Symbol c) {
@@ -821,6 +826,12 @@ Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
   Symbol T0dash = type_decl; // SELF_TYPE is accounted for here
+  if (type_decl != SELF_TYPE) {
+    if(!classtable->assert_type_exists(type_decl, c, this)) {
+      //if it doesn't then recovery strategy is to let the symbol be defined but as an object
+      T0dash = Object;
+    } 
+  }
   Symbol T1 = init->ias_type(e, c);
   classtable->assert_supertype(T0dash, T1, c); // type error in init expression is localized, doesn't affect other things
   e->O->enterscope();
@@ -844,17 +855,33 @@ Symbol block_class::infer_type(TypeEnvironment *e, Symbol c) {
 Symbol typcase_class::infer_type(TypeEnvironment *e, Symbol c) {
   expr->ias_type(e, c);
   Symbol lubresult = No_type;
+  std::set<Symbol> declared_branch_types;
   for (int i = 0; i < cases->len(); i++) {
     Case branch = cases->nth(i);
-    Symbol s = branch->infer_type(e, c); //note, I guess we don't need to set type here because branch_class is not an expression?
+    Symbol s = branch->infer_type(e, c); //note: We don't need to set type here because branch_class is not an expression
+    ;
+    // note that the cool manual asks us to check that variables declared on each branch of a case must all have distinct types. A better error reporting will be to check if a branch is a subtype of any branch that came before it, but to conform with the manual I've implemneted it like it is mentioned
+    if(declared_branch_types.find(branch->get_type()) != declared_branch_types.end()) {
+      classtable->semant_element_error(c, branch);
+      cerr << "Same type '" << branch->get_type() << "' cannot appear on two case branches" << endl;
+      // the error is localized and we can recover
+    } else {
+      declared_branch_types.insert(branch->get_type());
+    }
+
     lubresult = classtable->lowest_common_ancestor(s, lubresult, c);
   }
   return lubresult;
 };
 
-Symbol branch_class::infer_type(TypeEnvironment *e, Symbol c) {
+Symbol branch_class::infer_type(TypeEnvironment *e, Symbol c) { // infers type as well as does some semantic analysis
   e->O->enterscope();
-  e->O->addid(name, &type_decl);
+  if(!classtable->assert_type_exists(type_decl, c, this)) {
+    //error recovery: set it as object and continue
+    e->O->addid(name, &Object);
+  } else {
+    e->O->addid(name, &type_decl);
+  }
   Symbol t = expr->ias_type(e, c);
   e->O->exitscope();
   return t;

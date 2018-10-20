@@ -102,7 +102,6 @@ public:
   ostream& semant_error(Symbol classname);
   ostream& semant_element_error(Symbol classname, tree_node *t);
   ostream& semant_error(Symbol filename, tree_node *t);
-  SymbolTable<Symbol, Class_> *table;
   std::map<Symbol, Class_> table2;
   InheritanceTree *tree;
   void init_attr_meth(Class_ cl);
@@ -127,15 +126,16 @@ public:
     }
     return result;
   };
+  bool check_type_exists(Symbol t);
   bool assert_type_exists(Symbol t, Symbol c, tree_node *m) {
-    if(tree->find(t) == NULL) {
+    if(!check_type_exists(t)) {
       semant_element_error(c, m);
       error_stream << "The type referred to '"<< t << "' was not defined." << endl;
       return false;
     } else {
       return true;
     }
-  }
+  };
   Symbol lowest_common_ancestor(Symbol a, Symbol b, Symbol c);
 };
 

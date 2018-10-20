@@ -1,6 +1,20 @@
 Write-up for PA3
 ----------------
 
+There are three phases to the semantic checks
+
+## Phase 1
+
+Here, simply all the provided classes are loaded. This powers the `assert_type_exists` method which is used in the other two phases.
+
+## Phase 2
+
+Here, we walk through all the classes and 
+
+1. Build the InheritanceTree
+2.
+
+
 I've implemented an InheritanceTree class which holds the parent-child relation between classes. The design is clean and lets you get things like chain of ancestors (useful for attribute initialization) pretty easily.
 
 We need to expose a few members of the type "Class_" since we need access to parent and current class information to build up the inheritance tree. 
