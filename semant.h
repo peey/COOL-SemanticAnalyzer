@@ -118,10 +118,10 @@ public:
     }
   };
   bool is_supertype_of(Symbol t1, Symbol t2, Symbol c);
-  bool assert_supertype(Symbol t1, Symbol t2, Symbol c) {
+  bool assert_supertype(Symbol t1, Symbol t2, Symbol c, tree_node *m) {
     bool result = is_supertype_of(t1, t2, c);
     if(!result) {
-      semant_error(c);
+      semant_element_error(c, m);
       error_stream << "Type Error: "<< t1 << " is not a supertype of " << t2 << endl;
     }
     return result;

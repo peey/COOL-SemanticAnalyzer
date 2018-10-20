@@ -117,12 +117,12 @@ Symbol formal_class::get_name() {
   return name;
 }
 
-Symbol formal_class::get_type() {
-  return type_decl;
+Symbol* formal_class::get_type() {
+  return &type_decl;
 }
 
-Symbol branch_class::get_type() {
-  return type_decl;
+Symbol *branch_class::get_type() {
+  return &type_decl;
 }
 
 /**
@@ -544,6 +544,7 @@ void ClassTable::init_attr_meth(Class_ cl) {
     Symbol ancestor_name = lst->hd()->get_symbol();
     Class_ ancestor_class = classtable->lookup_class(ancestor_name);
 
+    /*
     if (semant_debug) {
       cout << "marco" << endl;
       cout << "One ancestor " << ancestor_name << endl;
@@ -551,6 +552,7 @@ void ClassTable::init_attr_meth(Class_ cl) {
       cout << "One ancestor " << ancestor_class->get_name() << endl;
       cout << "polo 1" << endl;
     }
+    */
     ancestor_class->load_type_info(cl->get_name());
     lst = lst->tl();
   }
@@ -568,7 +570,7 @@ void attr_class::semant(TypeEnvironment *e, Symbol c) {
   //works for both [Attr-Init] and [Attr-No-Init]
   Symbol inferred = init->ias_type(e, c);
   if(classtable->check_type_exists(type_decl)) {
-    classtable->assert_supertype(type_decl, inferred, c); // localized error if init expression doesn't match the declared type
+    classtable->assert_supertype(type_decl, inferred, c, this); // localized error if init expression doesn't match the declared type
   }
 }
 
@@ -581,12 +583,22 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
   for (int i = 0; i < formals->len(); i++) {
     Formal f = formals->nth(i);
     if (param_names.find(f->get_name()) == param_names.end()) {
-      if (classtable->assert_type_valid(f->get_type(), c, this, false)) { // self type not permitted in function formals
+      if (classtable->assert_type_valid(*f->get_type(), c, this, false)) { // self type not permitted in function formals
         param_names.insert(f->get_name());
         // Loads each formal into the environment, does not load duplicate ones
-        Symbol name = f->get_name();
-        Symbol type_decl = f->get_type();
-        e->O->addid(name, &type_decl);
+        Symbol _name = f->get_name();
+        Symbol *_type_decl = f->get_type();
+        if (semant_debug) {
+          cout << "Adding parameter " << _name << " as " << *_type_decl << endl;
+          if (_name == idtable.add_string("rest")) {
+            cout << "YO. car is: " << *e->O->lookup(idtable.add_string("car")) << endl;
+            cout << "i is: " << *e->O->lookup(idtable.add_string("i")) << endl;
+          }
+        }
+        e->O->addid(_name, _type_decl);
+        if (semant_debug) {
+          cout << "Added parameter " << _name << " as " << *e->O->lookup(_name) << endl;
+        }
       } else {
         // error recovery strategy: add it to the environment but as an object
         e->O->addid(f->get_name(), &Object);
@@ -596,11 +608,12 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
       cerr << "Duplicate parameter name " << f->get_name() << endl;
     }
   }
+
   // now we can evaluate expressions
   Symbol inferred = expr->ias_type(e, c);
   if(classtable->assert_type_valid(return_type, c, this, true)) {
     // we need to check only if it is legal
-    classtable->assert_supertype(return_type, inferred, c); // error here would be localized
+    classtable->assert_supertype(return_type, inferred, c, this); // error here would be localized
   }
   e->O->exitscope();
 }
@@ -667,7 +680,7 @@ bool method_class::check_compatibility(method_class *m) {
   for (int i = 0; i < formals->len(); i++) {
     Formal f1 = formals->nth(i);
     Formal f2 = m->formals->nth(i);
-    if (f1->get_type() != f2->get_type()) {
+    if (*f1->get_type() != *f2->get_type()) {
       return false;
     }
   }
@@ -706,6 +719,7 @@ Symbol object_class::infer_type(TypeEnvironment *e, Symbol c) {
   cout << "Name: " << name << endl;
   */
   Symbol *result = e->O->lookup(name);
+  if (semant_debug) cout << "Object being looked up is " << name << " " << ((result == NULL)? 0 : *result) << endl;
   if (name == self) {
     return SELF_TYPE;
   } else if (result != NULL) {
@@ -856,7 +870,7 @@ Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
     } 
   }
   Symbol T1 = init->ias_type(e, c);
-  classtable->assert_supertype(T0dash, T1, c); // type error in init expression is localized, doesn't affect other things
+  classtable->assert_supertype(T0dash, T1, c, this); // type error in init expression is localized, doesn't affect other things
   e->O->enterscope();
   e->O->addid(identifier, &T0dash);
   Symbol T2 = body->ias_type(e, c);
@@ -884,12 +898,12 @@ Symbol typcase_class::infer_type(TypeEnvironment *e, Symbol c) {
     Symbol s = branch->infer_type(e, c); //note: We don't need to set type here because branch_class is not an expression
     ;
     // note that the cool manual asks us to check that variables declared on each branch of a case must all have distinct types. A better error reporting will be to check if a branch is a subtype of any branch that came before it, but to conform with the manual I've implemneted it like it is mentioned
-    if(declared_branch_types.find(branch->get_type()) != declared_branch_types.end()) {
+    if(declared_branch_types.find(*branch->get_type()) != declared_branch_types.end()) {
       classtable->semant_element_error(c, branch);
-      cerr << "Same type '" << branch->get_type() << "' cannot appear on two case branches" << endl;
+      cerr << "Same type '" << *branch->get_type() << "' cannot appear on two case branches" << endl;
       // the error is localized and we can recover
     } else {
-      declared_branch_types.insert(branch->get_type());
+      declared_branch_types.insert(*branch->get_type());
     }
 
     lubresult = classtable->lowest_common_ancestor(s, lubresult, c);
@@ -913,13 +927,13 @@ Symbol branch_class::infer_type(TypeEnvironment *e, Symbol c) { // infers type a
 Symbol loop_class::infer_type(TypeEnvironment *e, Symbol c) {
   // The manual gives [Loop-False] and [Loop-True] but we can't always determine what the condition will evaluate to at static time, so we take the lub/lowest_common_ancestor of both types
   Symbol pred_type = pred->ias_type(e, c);
-  classtable->assert_supertype(Bool, pred_type, c); // this isn't specified in the manual explicitly, but implicitly having a false and a true rule means this. A type error here would be localized, doesn't affect loop body
+  classtable->assert_supertype(Bool, pred_type, c, this); // this isn't specified in the manual explicitly, but implicitly having a false and a true rule means this. A type error here would be localized, doesn't affect loop body
   return classtable->lowest_common_ancestor(Bool, body->ias_type(e, c), c); // in case pred_type is No_type, we don't want that to affect loop's type's evaluation
 };
 
 Symbol cond_class::infer_type(TypeEnvironment *e, Symbol c) {
   //[If-True] and [If-False]
-  classtable->assert_supertype(Bool, pred->ias_type(e, c), c); // type error, if any, is localized
+  classtable->assert_supertype(Bool, pred->ias_type(e, c), c, this); // type error, if any, is localized
   return classtable->lowest_common_ancestor(then_exp->ias_type(e, c), else_exp->ias_type(e, c), c); // takes care of no else
 };
 
@@ -967,7 +981,7 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
   for (int i = 0; i < formals->len(); i++) {
     Formal formal = formals->nth(i);
     Expression a = actual->nth(i);
-    classtable->assert_supertype(formal->get_type(), a->ias_type(e, c), c); // type error here is localized and we should be able to continue checking type of other params
+    classtable->assert_supertype(*formal->get_type(), a->ias_type(e, c), c, formal); // type error here is localized and we should be able to continue checking type of other params
   }
 
   return Tnplus1;
@@ -985,7 +999,7 @@ Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
     return No_type; // unsure how to recover from this error
   }
 
-  if(!classtable->assert_supertype(type_name, T0, c)) {
+  if(!classtable->assert_supertype(type_name, T0, c, this)) {
     //TODO
     return No_type;
   }
@@ -1014,7 +1028,7 @@ Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
   for (int i = 0; i < formals->len(); i++) {
     Formal formal = formals->nth(i);
     Expression a = actual->nth(i);
-    classtable->assert_supertype(formal->get_type(), a->ias_type(e, c), c); // localized error if an arg doesn't match param
+    classtable->assert_supertype(*formal->get_type(), a->ias_type(e, c), c, formal); // localized error if an arg doesn't match param
   }
 
   return Tnplus1;
@@ -1028,10 +1042,26 @@ Symbol assign_class::infer_type(TypeEnvironment *e, Symbol c) {
   }
 
   //[ASSIGN]
+  if (semant_debug) {
+    cout << " ============================= " << endl;
+    expr->dump_with_types(cerr, 0);
+    cout << " ============================= " << endl;
+    cout << expr->infer_type(e, c) << endl;
+    cout << " ------------- INFER --------- " << endl;
+  }
+
   Symbol Tdash = expr->ias_type(e, c); 
+  if (semant_debug) {
+    cout << "~~~~~~~~~~~~~~~ END IAS TYPE ~~~~~~~~~~~~" << endl;
+  }
   Symbol *T = e->O->lookup(name); 
   if (T != NULL) {
-    if (classtable->assert_supertype(*T, Tdash, c)) {
+    if (semant_debug) {
+      cout << "Here's what's going on " << name << " is " << *T << " " << Tdash << endl;
+      expr->dump_with_types(cerr, 0);
+    }
+
+    if (classtable->assert_supertype(*T, Tdash, c, this)) {
       return Tdash;
     } else {
       return *T;
