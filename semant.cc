@@ -578,17 +578,11 @@ void class__class::load_type_info(Symbol cl) {
 }
 
 void attr_class::load_type_info(Symbol cl) {
-  //cout << "Control reaches here" << endl;
   if (typedeclarations->probe(cl)) {
-    //cout << "Adding attr: " << name << endl;
-    /*
-    if (cl != Object && cl != Str && cl != IO && cl != Int && cl != Bool) {
-      if (typedeclarations->lookup(cl)->O->lookup(name) == NULL) {
-        cerr << "Attribute "  << name << " already defined" << endl;
-        classtable->semant_error(cl);
-      }
+    if (typedeclarations->lookup(cl)->O->lookup(name) != NULL) {
+      classtable->semant_error(cl);
+      cerr << "Attribute "  << name << " already defined" << endl;
     }
-    */
     typedeclarations->lookup(cl)->O->addid(name, &type_decl);
   } else {
     classtable->semant_error(cl);
