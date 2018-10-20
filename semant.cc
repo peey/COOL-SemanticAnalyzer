@@ -163,8 +163,8 @@ bool process_class(ClassTable *ct, Classes classes, Symbol s) { // process_class
 
 
     if (cl == NULL) {
-      cerr << "Class " << c  << " does not exist"<< endl;
       ct->semant_error();
+      cerr << "Class " << c  << " does not exist"<< endl;
       return false;
     }
 
@@ -172,8 +172,8 @@ bool process_class(ClassTable *ct, Classes classes, Symbol s) { // process_class
     if (unprocessed.find(c) != unprocessed.end()) { // if not already processed
       if (ct->tree->find(cl->get_parent()) == NULL) { // if parent is unprocessed, queue it
         if (find(queued_classes.begin(), queued_classes.end(), cl->get_parent()) != queued_classes.end())  { // if it's already on stack, we have a cyclic dependency
-          cerr << "Cyclic dependency found involving class " << cl->get_parent() << endl;
           ct->semant_error();
+          cerr << "Cyclic dependency found involving class " << cl->get_parent() << endl;
           return false;
         } else {
           queued_classes.push_front(c); // this will get processed again later
@@ -534,14 +534,21 @@ void attr_class::semant(TypeEnvironment *e, Symbol c) {
   classtable->assert_supertype(type_decl, inferred, c); // localized error if init expression doesn't match the declared type
 }
 
+
 void method_class::semant(TypeEnvironment *e, Symbol c) {
   //[Method]
   e->O->enterscope();
   e->O->addid(self, &SELF_TYPE); // so that self is "defined" and doesn't give errors
+  std::set<Symbol> param_names;
   for (int i = 0; i < formals->len(); i++) {
     Formal f = formals->nth(i);
     f->semant(e, c); // Loads each formal into the environment
-    //TODO check that params aren't duplicate
+    if (param_names.find(f->get_name()) == param_names.end()) {
+      param_names.insert(f->get_name());
+    } else {
+      classtable->semant_element_error(c, f);
+      cerr << "Duplicate parameter name " << f->get_name() << endl;
+    }
   }
   // now we can evaluate expressions
   Symbol inferred = expr->ias_type(e, c);
@@ -551,6 +558,10 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
 
 void formal_class::semant(TypeEnvironment *e, Symbol c) {
   e->O->addid(name, &type_decl);
+}
+
+Symbol formal_class::get_name() {
+  return name;
 }
 
 Symbol formal_class::get_type() {
@@ -580,8 +591,8 @@ void attr_class::load_type_info(Symbol cl) {
     */
     typedeclarations->lookup(cl)->O->addid(name, &type_decl);
   } else {
-    cerr << "Symbol " << name << " Not found" << endl;
     classtable->semant_error(cl);
+    cerr << "Symbol " << name << " Not found" << endl;
   }
 }
 
@@ -590,8 +601,8 @@ void method_class::load_type_info(Symbol cl) {
   if (typedeclarations->probe(cl)) {
     typedeclarations->lookup(cl)->M->addid(name, this);
   } else {
-    cerr << "Method " << name << "Not found" << endl;
     classtable->semant_error(cl);
+    cerr << "Method " << name << "Not found" << endl;
   }
 }
 
@@ -615,8 +626,8 @@ Symbol object_class::infer_type(TypeEnvironment *e, Symbol c) {
     //cout << "Lookup: " << *result << endl;
     return *result;
   } else {
-    cerr << "semantic error: " << name << "used but not defined" << endl;
     classtable->semant_error(c);
+    cerr << "semantic error: " << name << "used but not defined" << endl;
     return No_type;
   }
 };
@@ -653,8 +664,8 @@ Symbol comp_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Bool) {
     return Bool;
   } else {
-    cerr << "Complement of expression which is not of type boolean" << endl;
     classtable->semant_error(c);
+    cerr << "Complement of expression which is not of type boolean" << endl;
     return No_type;
   }
 };
@@ -663,8 +674,8 @@ Symbol leq_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Bool;
   } else {
-    cerr << "leq: both types are not integers" << endl;
     classtable->semant_error(c);
+    cerr << "leq: both types are not integers" << endl;
     return No_type;
   }
 };
@@ -681,8 +692,8 @@ Symbol lt_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Bool;
   } else {
-    cerr << "lt: both types are not integers" << endl;
     classtable->semant_error(c);
+    cerr << "lt: both types are not integers" << endl;
     return No_type;
   }
 };
@@ -691,8 +702,8 @@ Symbol neg_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "neg: operand is not an integer" << endl;
     classtable->semant_error(c);
+    cerr << "neg: operand is not an integer" << endl;
     return No_type;
   }
 };
@@ -701,8 +712,8 @@ Symbol divide_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "division: both types are not integers" << endl;
     classtable->semant_error(c);
+    cerr << "division: both types are not integers" << endl;
     return No_type;
   }
 };
@@ -712,8 +723,8 @@ Symbol mul_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "mul: both types are not integers" << endl;
     classtable->semant_error(c);
+    cerr << "mul: both types are not integers" << endl;
     return No_type;
   }
 };
@@ -723,8 +734,8 @@ Symbol sub_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "sub: both types are not integers" << endl;
     classtable->semant_error(c);
+    cerr << "sub: both types are not integers" << endl;
     return No_type;
   }
 };
@@ -734,8 +745,8 @@ Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "sub: both types are not integers" << endl;
     classtable->semant_error(c);
+    cerr << "sub: both types are not integers" << endl;
     return No_type;
   }
 };
