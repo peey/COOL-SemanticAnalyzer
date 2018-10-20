@@ -571,16 +571,35 @@ Symbol formal_class::get_type() {
 void class__class::load_type_info(Symbol cl) {
   //cout << "Class being processed: " << name << endl;
   //cout << "polo 2" << endl;
+  std::set<Symbol> attr_names;
+  std::set<Symbol> method_names;
   for (int i = 0; i < features->len(); i++) {
     Feature f = features->nth(i);
-    f->load_type_info(cl);
+    // error recovery strategy for duplicate attr / method names: continue semantic checks with the first definition 
+    if (f->is_attribute()) {
+      if (attr_names.find(f->get_name()) != attr_names.end()) {
+        classtable->semant_element_error(cl, f);
+        cerr << "Duplicate attribute declaration for " << cl << "::" << f->get_name() << "is not allowed in a class" << endl;
+      } else {
+        attr_names.insert(f->get_name());
+        f->load_type_info(cl);
+      }
+    } else {
+      if (method_names.find(f->get_name()) != method_names.end()) {
+        classtable->semant_element_error(cl, f);
+        cerr << "Duplicate method declaration for " << cl << "::" << f->get_name() << "is not allowed in a class" << endl;
+      } else {
+        method_names.insert(f->get_name());
+        f->load_type_info(cl);
+      }
+    } 
   }
 }
 
 void attr_class::load_type_info(Symbol cl) {
   if (typedeclarations->probe(cl)) {
     if (typedeclarations->lookup(cl)->O->lookup(name) != NULL) {
-      classtable->semant_error(cl, this);
+      classtable->semant_element_error(cl, this);
       cerr << "Attribute " << cl << "::" << name << " already defined in an ancestor class" << endl;
     } else {
       typedeclarations->lookup(cl)->O->addid(name, &type_decl);

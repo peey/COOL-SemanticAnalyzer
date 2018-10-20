@@ -87,6 +87,7 @@ void load_type_info(Symbol);
 virtual void dump_with_types(ostream&,int) = 0; \
 virtual void load_type_info(Symbol) = 0; \
 virtual Symbol get_name() = 0; \
+virtual bool is_attribute() = 0; \
 virtual void semant(TypeEnvironment *e, Symbol c) = 0;
 
 // this is defined for method and attribute
@@ -99,7 +100,11 @@ void semant(TypeEnvironment *e, Symbol c);
 #define method_EXTRAS \
 Formals get_formals(); \
 Symbol get_return_type(); \
+bool is_attribute() {return false;}; \
 bool check_compatibility(method_class *m);
+
+#define attr_EXTRAS \
+bool is_attribute() {return true;}; 
 
 #define Formal_EXTRAS                              \
 virtual void dump_with_types(ostream&,int) = 0; \
