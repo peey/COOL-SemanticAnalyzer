@@ -15,7 +15,7 @@
 class InheritanceTree {
   private:
     Symbol root;
-    List<InheritanceTree> *children;
+    List<InheritanceTree> *children = NULL;
   public:
     Symbol get_symbol() {
       return root;
@@ -47,10 +47,14 @@ class InheritanceTree {
     }
 
     void levels(int n) {
-      cout << root << endl;
+      cout << root << " at " << this << endl;
       List<InheritanceTree> *lst = children;
       cout << "============LEVELSSS========="<< n << "=========" << endl;
       while(lst != NULL) {
+        if (true) {
+          cout << "lhead: " << lst->hd() << endl;
+          //cout << "lhead: " << lst->hd()->get_symbol() << endl;
+        }
         lst->hd()->levels(n - 1);
         lst = lst->tl();
       }
@@ -95,6 +99,8 @@ public:
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
+  ostream& semant_error(Symbol classname);
+  ostream& semant_element_error(Symbol classname, tree_node *t);
   ostream& semant_error(Symbol filename, tree_node *t);
   SymbolTable<Symbol, Class_> *table;
   std::map<Symbol, Class_> table2;
@@ -103,8 +109,9 @@ public:
   Class_ lookup_class(Symbol s) {
     auto it = table2.find(s);
     if (it == table2.end()) {
+      // note: this is for debugging only. Lookup_class hasn't been used in an unsafe way anywhere in the code so far
       error_stream << "looked up class '" << s << "' does not exist in the table" << endl;
-      return NULL; //TODO
+      return NULL;
     } else {
       Class_ cl = table2.find(s)->second;
       //cout << "marco -1" << endl;
@@ -112,6 +119,14 @@ public:
     }
   };
   bool is_supertype_of(Symbol t1, Symbol t2, Symbol c);
+  bool assert_supertype(Symbol t1, Symbol t2, Symbol c) {
+    bool result = is_supertype_of(t1, t2, c);
+    if(!result) {
+      error_stream << "Type Error: "<< t1 << " is not a supertype of " << t2 << endl;
+      semant_error(c);
+    }
+    return result;
+  };
   Symbol lowest_common_ancestor(Symbol a, Symbol b, Symbol c);
 };
 

@@ -5,6 +5,8 @@
 #include "utilities.h"
 #include <cassert>
 #include <set>
+#include <queue>
+#include <algorithm> // only to use `find` in set
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -133,56 +135,84 @@ bool class__class::is_subtype_of(ClassTable ct, Symbol supertype) {
  * End type loading
  */
 
-std::set<Symbol> queued_classes;
+std::set<Symbol> unprocessed; // all unprocessed classes
+// everything visited and processed will be accessible via find()
 
-bool process_class(ClassTable *ct, Classes classes, Symbol s) {
-  //cout << "processing " << s << endl;
-  if(queued_classes.find(s) != queued_classes.end()) { // we have a cycle
+bool process_class(ClassTable *ct, Classes classes, Symbol s) { // process_class is like the dfs_visit method
+  std::deque<Symbol> queued_classes; // dfs stack
+  queued_classes.push_front(s);
+  Symbol c;
+  while (!queued_classes.empty()) {
+    c = queued_classes.front();
+    queued_classes.pop_front();
+
+    if (semant_debug) cout << "processing " << c << endl;
+
+    Class_ cl = NULL; // find it, else return error
     for (int i = 0; i < classes->len(); i++) {
-      Class_ cl = classes->nth(i);
-      if (cl->get_name() == s) {
-        ct->semant_error(cl);
-        return false;
+      Class_ cla = classes->nth(i);
+      if (semant_debug) {
+        cout << "looking through cla ";
+        cout << cla->get_name() << endl;
+      }
+      if (cla->get_name() == c) {
+        cl = cla;
+        break;
       }
     }
-    return false; // will never be reached
-  } else {
-    for (int i = 0; i < classes->len(); i++) {
-      Class_ cl = classes->nth(i);
-      if (cl->get_name() == s) {
-        ct->table2.insert({cl->get_name(), cl});
 
-        InheritanceTree *parent = ct->tree->find(cl->get_parent());
-        if (parent == NULL) {
-          queued_classes.insert(cl->get_name()); //push
-          process_class(ct, classes, cl->get_parent());
-          queued_classes.erase(queued_classes.find(cl->get_name())); //pop
-          parent = ct->tree->find(cl->get_parent());
+
+    if (cl == NULL) {
+      cerr << "Class " << c  << " does not exist"<< endl;
+      ct->semant_error();
+      return false;
+    }
+
+
+    if (unprocessed.find(c) != unprocessed.end()) { // if not already processed
+      if (ct->tree->find(cl->get_parent()) == NULL) { // if parent is unprocessed, queue it
+        if (find(queued_classes.begin(), queued_classes.end(), cl->get_parent()) != queued_classes.end())  { // if it's already on stack, we have a cyclic dependency
+          cerr << "Cyclic dependency found involving class " << cl->get_parent() << endl;
+          ct->semant_error();
+          return false;
+        } else {
+          queued_classes.push_front(c); // this will get processed again later
+          queued_classes.push_front(cl->get_parent()); // parent will get processed first
         }
-        //cout << "class: " << cl->get_name() << " parent: " << cl->get_parent() << endl;
-        //cout << "parent: "  << parent->get_symbol() << endl;
-        parent->add_child(cl->get_name());
-        //cout << "core dumped yet?" << endl;
-        //processed_classes();
+      } else { // add to inheritance tree
+        ct->table2.insert({c, cl});
+        InheritanceTree *parent = ct->tree->find(cl->get_parent());
+        if (semant_debug) {
+          cout << "Adding child " << c << " to parent " << cl->get_parent() << " at " << parent <<  endl;
+        }
+        parent->add_child(c);
+        unprocessed.erase(unprocessed.find(c));
       }
-    }
-    //cout << "processed " << s << endl;
-    return true;
+    } // if it's already processed, we get back to next element on stack which inherits it
   }
+  return true;
 }
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
+  /* Fill this in */
+  table = new SymbolTable<Symbol, Class_>();
+  table->enterscope();
+  install_basic_classes();
 
-    /* Fill this in */
-    table = new SymbolTable<Symbol, Class_>();
-    table->enterscope();
-    install_basic_classes();
+  if (semant_debug) tree->levels(0);
 
-    for (int i = 0; i < classes->len(); i++) {
-      Class_ cl = classes->nth(i);
-      if (tree->find(cl->get_name()) == NULL) // already processed
-        process_class(this, classes, cl->get_name());
+  for (int i = 0; i < classes->len(); i++) {
+    Class_ cl = classes->nth(i);
+    unprocessed.insert(cl->get_name());
+  }
+
+  while (!unprocessed.empty()) {
+    Symbol class_name = *unprocessed.begin(); // we don't need to remove, it will be removed after it's processed
+    if (!process_class(this, classes, class_name)) {
+      // there was some error, it has been reported and all
+      break;
     }
+  }
 }
 
 
@@ -288,15 +318,15 @@ void ClassTable::install_basic_classes() {
 						      no_expr()))),
 	       filename);
 
-  table->addid(Object, &Object_class);
+  //table->addid(Object, &Object_class);
   table2.insert({Object, Object_class});
-  table->addid(Str, &Str_class);
+  //table->addid(Str, &Str_class);
   table2.insert({Str, Str_class});
-  table->addid(Int, &Int_class);
+  //table->addid(Int, &Int_class);
   table2.insert({Int, Int_class});
-  table->addid(Bool, &Bool_class);
+  //table->addid(Bool, &Bool_class);
   table2.insert({Bool, Bool_class});
-  table->addid(IO, &IO_class);
+  //table->addid(IO, &IO_class);
   table2.insert({IO, IO_class});
 
   tree = new InheritanceTree(Object);
@@ -325,6 +355,17 @@ ostream& ClassTable::semant_error(Class_ c)
 {                                                             
     return semant_error(c->get_filename(),c);
 }    
+
+ostream& ClassTable::semant_error(Symbol classname)
+{                                                             
+    return semant_error(lookup_class(classname));
+}    
+
+ostream& ClassTable::semant_element_error(Symbol classname, tree_node *t)
+{
+    return semant_error(lookup_class(classname)->get_filename(), t);
+}
+
 
 ostream& ClassTable::semant_error(Symbol filename, tree_node *t)
 {
@@ -409,19 +450,31 @@ void program_class::semant()
 
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
+
+    if (classtable->errors()) { // in case there are errors building up the inheritance tree, end
+      cerr << "Compilation halted due to static semantic errors." << endl;
+      exit(1);
+    }
+
+
+    if (semant_debug) {
+      classtable->tree->levels(0);
+      cout << " tree printed completely" << endl;
+    }
+
     classtable->init_attr_meth(classtable->lookup_class(Object));
     classtable->init_attr_meth(classtable->lookup_class(Int));
     classtable->init_attr_meth(classtable->lookup_class(Str));
     classtable->init_attr_meth(classtable->lookup_class(Bool));
     classtable->init_attr_meth(classtable->lookup_class(IO));
 
-    //classtable->tree->levels(0);
 
     // set up attribute and method type environments
     for (int i = 0; i < classes->len(); i++) {
       Class_ cl = classes->nth(i);
       classtable->init_attr_meth(cl);
     }
+
 
     if (classtable->tree->find(Main) == NULL) {
       classtable->semant_error();
@@ -445,23 +498,23 @@ void program_class::semant()
 void ClassTable::init_attr_meth(Class_ cl) {
   typedeclarations->addid(cl->get_name(), new TypeEnvironment());
 
-  //cout << "Looking up ancestors of: " << cl->get_name() << endl;
+  if (semant_debug) cout << "Looking up ancestors of: " << cl->get_name() << endl;
   List<InheritanceTree> *ancestors = classtable->tree->ancestor_chain(cl->get_name());
   List<InheritanceTree> *lst = ancestors;
-  //cout << "Got: " << lst << endl;
+  if (semant_debug) cout << "Got: " << lst << endl;
 
   while (lst != NULL) {
     // inherited attributes can't be redefined (section 5, cool manual)
     Symbol ancestor_name = lst->hd()->get_symbol();
     Class_ ancestor_class = classtable->lookup_class(ancestor_name);
 
-    /*
-    cout << "marco" << endl;
-    cout << "One ancestor " << ancestor_name << endl;
-    cout << "One ancestor " << ancestor_class << endl;
-    cout << "One ancestor " << ancestor_class->get_name() << endl;
-    cout << "polo 1" << endl;
-    */
+    if (semant_debug) {
+      cout << "marco" << endl;
+      cout << "One ancestor " << ancestor_name << endl;
+      cout << "One ancestor " << ancestor_class << endl;
+      cout << "One ancestor " << ancestor_class->get_name() << endl;
+      cout << "polo 1" << endl;
+    }
     ancestor_class->load_type_info(cl->get_name());
     lst = lst->tl();
   }
@@ -478,12 +531,13 @@ void class__class::semant(TypeEnvironment *e) {
 void attr_class::semant(TypeEnvironment *e, Symbol c) {
   //works for both [Attr-Init] and [Attr-No-Init]
   Symbol inferred = init->ias_type(e, c);
-  assert(classtable->is_supertype_of(type_decl, inferred, c));
+  classtable->assert_supertype(type_decl, inferred, c); // localized error if init expression doesn't match the declared type
 }
 
 void method_class::semant(TypeEnvironment *e, Symbol c) {
   //[Method]
   e->O->enterscope();
+  e->O->addid(self, &SELF_TYPE); // so that self is "defined" and doesn't give errors
   for (int i = 0; i < formals->len(); i++) {
     Formal f = formals->nth(i);
     f->semant(e, c); // Loads each formal into the environment
@@ -491,7 +545,7 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
   }
   // now we can evaluate expressions
   Symbol inferred = expr->ias_type(e, c);
-  assert(classtable->is_supertype_of(return_type, inferred, c));
+  classtable->assert_supertype(return_type, inferred, c); // error here would be localized
   e->O->exitscope();
 }
 
@@ -516,9 +570,18 @@ void attr_class::load_type_info(Symbol cl) {
   //cout << "Control reaches here" << endl;
   if (typedeclarations->probe(cl)) {
     //cout << "Adding attr: " << name << endl;
+    /*
+    if (cl != Object && cl != Str && cl != IO && cl != Int && cl != Bool) {
+      if (typedeclarations->lookup(cl)->O->lookup(name) == NULL) {
+        cerr << "Attribute "  << name << " already defined" << endl;
+        classtable->semant_error(cl);
+      }
+    }
+    */
     typedeclarations->lookup(cl)->O->addid(name, &type_decl);
   } else {
-    cerr << "Not found" << endl;
+    cerr << "Symbol " << name << " Not found" << endl;
+    classtable->semant_error(cl);
   }
 }
 
@@ -527,7 +590,8 @@ void method_class::load_type_info(Symbol cl) {
   if (typedeclarations->probe(cl)) {
     typedeclarations->lookup(cl)->M->addid(name, this);
   } else {
-    cerr << "Not found" << endl;
+    cerr << "Method " << name << "Not found" << endl;
+    classtable->semant_error(cl);
   }
 }
 
@@ -545,13 +609,14 @@ Symbol object_class::infer_type(TypeEnvironment *e, Symbol c) {
   cout << "Name: " << name << endl;
   */
   Symbol *result = e->O->lookup(name);
-  if (result != NULL) {
+  if (name == self) {
+    return SELF_TYPE;
+  } else if (result != NULL) {
     //cout << "Lookup: " << *result << endl;
     return *result;
-  } else if (name == self) {
-    return SELF_TYPE;
   } else {
-    cerr << "semantic error: used but not defined" << endl;
+    cerr << "semantic error: " << name << "used but not defined" << endl;
+    classtable->semant_error(c);
     return No_type;
   }
 };
@@ -588,7 +653,8 @@ Symbol comp_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Bool) {
     return Bool;
   } else {
-    cerr << "type error comp" << endl;
+    cerr << "Complement of expression which is not of type boolean" << endl;
+    classtable->semant_error(c);
     return No_type;
   }
 };
@@ -597,19 +663,17 @@ Symbol leq_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Bool;
   } else {
-    cerr << "type error leq" << endl;
+    cerr << "leq: both types are not integers" << endl;
+    classtable->semant_error(c);
     return No_type;
   }
 };
 
 // same as leq
 Symbol eq_class::infer_type(TypeEnvironment *e, Symbol c) {
-  if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
-    return Bool;
-  } else {
-    cerr << "type error eq" << endl;
-    return No_type;
-  }
+  e1->ias_type(e, c);
+  e2->ias_type(e, c);
+  return Bool;
 };
 
 // same as leq
@@ -617,7 +681,8 @@ Symbol lt_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Bool;
   } else {
-    cerr << "type error lt" << endl;
+    cerr << "lt: both types are not integers" << endl;
+    classtable->semant_error(c);
     return No_type;
   }
 };
@@ -626,7 +691,8 @@ Symbol neg_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error neg" << endl;
+    cerr << "neg: operand is not an integer" << endl;
+    classtable->semant_error(c);
     return No_type;
   }
 };
@@ -635,7 +701,8 @@ Symbol divide_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error divide" << endl;
+    cerr << "division: both types are not integers" << endl;
+    classtable->semant_error(c);
     return No_type;
   }
 };
@@ -645,7 +712,8 @@ Symbol mul_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error mul" << endl;
+    cerr << "mul: both types are not integers" << endl;
+    classtable->semant_error(c);
     return No_type;
   }
 };
@@ -655,7 +723,8 @@ Symbol sub_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error sub" << endl;
+    cerr << "sub: both types are not integers" << endl;
+    classtable->semant_error(c);
     return No_type;
   }
 };
@@ -665,7 +734,8 @@ Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
   if (e1->ias_type(e, c) == Int && e2->ias_type(e, c) == Int) {
     return Int;
   } else {
-    cerr << "type error plus" << endl;
+    cerr << "sub: both types are not integers" << endl;
+    classtable->semant_error(c);
     return No_type;
   }
 };
@@ -673,7 +743,7 @@ Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
 Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
   Symbol T0dash = type_decl; // SELF_TYPE is accounted for here
   Symbol T1 = init->ias_type(e, c);
-  assert(classtable->is_supertype_of(T0dash, T1, c));
+  classtable->assert_supertype(T0dash, T1, c); // type error in init expression is localized, doesn't affect other things
   e->O->enterscope();
   e->O->addid(identifier, &T0dash);
   Symbol T2 = body->ias_type(e, c);
@@ -714,13 +784,13 @@ Symbol branch_class::infer_type(TypeEnvironment *e, Symbol c) {
 Symbol loop_class::infer_type(TypeEnvironment *e, Symbol c) {
   // The manual gives [Loop-False] and [Loop-True] but we can't always determine what the condition will evaluate to at static time, so we take the lub/lowest_common_ancestor of both types
   Symbol pred_type = pred->ias_type(e, c);
-  assert(classtable->is_supertype_of(Bool, pred_type, c)); // this isn't specified in the manual explicitly, but implicitly having a false and a true rule means this
-  return classtable->lowest_common_ancestor(pred_type, body->ias_type(e, c), c);
+  classtable->assert_supertype(Bool, pred_type, c); // this isn't specified in the manual explicitly, but implicitly having a false and a true rule means this. A type error here would be localized, doesn't affect loop body
+  return classtable->lowest_common_ancestor(Bool, body->ias_type(e, c), c); // in case pred_type is No_type, we don't want that to affect loop's type's evaluation
 };
 
 Symbol cond_class::infer_type(TypeEnvironment *e, Symbol c) {
   //[If-True] and [If-False]
-  assert(classtable->is_supertype_of(Bool, pred->ias_type(e, c), c));
+  classtable->assert_supertype(Bool, pred->ias_type(e, c), c); // type error, if any, is localized
   return classtable->lowest_common_ancestor(then_exp->ias_type(e, c), else_exp->ias_type(e, c), c); // takes care of no else
 };
 
@@ -733,10 +803,7 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 
   TypeEnvironment *edash = typedeclarations->lookup(T0dash);
-
-  if (edash == NULL) {
-    //TODO
-  }
+  //T0dash will always exist because it's either inferred or is c
 
   /*
   cout << "core dumped yet?" << endl;
@@ -748,7 +815,11 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
 
   Formals formals = m->get_formals();
 
-  assert(formals->len() == actual->len());
+  if(formals->len() != actual->len()) {
+    cerr << "Mismatch between length of specified arguments and number of parameters that the function " << name << " accepts." << endl;
+    classtable->semant_element_error(c, this);
+    return No_type; // unsure how to recover from this error, so we won't
+  }
 
   Symbol Tnplus1 = m->get_return_type();
 
@@ -759,7 +830,7 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
   for (int i = 0; i < formals->len(); i++) {
     Formal formal = formals->nth(i);
     Expression a = actual->nth(i);
-    assert(classtable->is_supertype_of(formal->get_type(), a->ias_type(e, c), c));
+    classtable->assert_supertype(formal->get_type(), a->ias_type(e, c), c); // type error here is localized and we should be able to continue checking type of other params
   }
 
   return Tnplus1;
@@ -772,7 +843,9 @@ Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
   TypeEnvironment *edash = typedeclarations->lookup(type_name);
 
   if (edash == NULL) {
-    //TODO
+    cerr << "The class " << type_name << " does not exist." << endl;
+    classtable->semant_element_error(c, this);
+    return No_type; // unsure how to recover from this error
   }
 
   method_class *m =  edash->M->lookup(name);
@@ -790,21 +863,31 @@ Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
   for (int i = 0; i < formals->len(); i++) {
     Formal formal = formals->nth(i);
     Expression a = actual->nth(i);
-    assert(classtable->is_supertype_of(formal->get_type(), a->ias_type(e, c), c));
+    classtable->assert_supertype(formal->get_type(), a->ias_type(e, c), c); // localized error if an arg doesn't match param
   }
 
   return Tnplus1;
 };
 
 Symbol assign_class::infer_type(TypeEnvironment *e, Symbol c) {
+  // also do semantic checks here
+  if (name == self) {
+    classtable->semant_element_error(c, this); // type error is localized, we don't update self in any way, so we can recover and proceed to other errors
+    cerr << "Cannot assign to 'self'." << endl;
+  }
+
   //[ASSIGN]
   Symbol Tdash = expr->ias_type(e, c); 
   Symbol *T = e->O->lookup(name); 
   if (T != NULL) {
-    assert(classtable->is_supertype_of(*T, Tdash, c));
-    return Tdash;
+    if (classtable->assert_supertype(*T, Tdash, c)) {
+      return Tdash;
+    } else {
+      return *T;
+    }
   } else {
-    cerr << "Use before define" << endl;
-    return No_type; //TODO
+    classtable->semant_element_error(c, this);
+    cerr << "Symbol " << name << " used before it was defined "<< endl;
+    return No_type; 
   }
 };
