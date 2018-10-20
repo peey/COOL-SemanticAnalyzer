@@ -3,7 +3,7 @@ Write-up for PA3
 
 # Overview
 
-There are two phases to the semantic checks
+There are three phases to the semantic checks
 
 ## Phase 1
 
@@ -11,8 +11,9 @@ Here we just go through all the classes declared by the programmer and make a ma
 
 This is done because in the entire program, the classes are refered to using their names and not by passing the actual class object. This is close to how even in the AST, various places like parameter declarations all refer to the class by the name.
 
-This also powers the `assert_type_exists` method which is used in the other two phases.
+We also check for class declaration related errors in this phase: duplicate class declarations (including clashes with built-in classes), illegal inheritance from disallowed base classes.
 
+This phase also powers the `assert_type_exists` method which is used in the other two phases.
 
 ## Phase 2
 
@@ -20,26 +21,61 @@ I've implemented an InheritanceTree class which holds the parent-child relation 
 
 Here we use DFS to detect dependency cycles, and when there are none we start loading the classes into an inheritancetree by processing the ancestors first. 
 
-As we are building the inheritance tree, we process the features of the class and load them into identifier and method environments on a per-class basis.
+As we are building the inheritance tree, we initialize the type environments O and M by walking through class features.
 
-We also simultaneously class the type inference 
+## Phase 3
 
+Using the type environment information we got from phase 2, we can now just simply systematically walk through all the classes and do type inference (from the cool type rules), do more element-based checks (such as duplicate parameter names, invalid let binding names).
+
+This is where majority of the work is done and each instance of it is commented, and in some places where needed, I've provided references to the cool manual.
+
+# Changes to cool-tree header files
 
 We need to expose a few members of the type "Class_" since we need access to parent and current class information to build up the inheritance tree. 
 
-Next, we initialize the type environments O and M (TypeDeclarations->identifiers, TypeDeclarations->methods, respectively) by walking through class features. Each feature (attr and method) adds itself to the passed environment.
+We also do this for formal, branch, features (attr and method both). The `get_type` methods return pointers by design since storing in symbol table requires pointers .
 
-This is done in a way that a parent class is processed before a class which inherits it. If there is a cylcic dependency, it is found and reported. This is done by jumping to find and process the definition of the parent class. In case of cyclic dependency, we'll eventually jump to the initial attribute which we started with. In this case, we'll be able to detect this via a set which is being maintained which keeps a track of queued classes to be processed.
+There are two prominent methods on all expressions: `infer_type` and `ias_type` (infer and set type). The latter is just a wrapper around the former which also calls the `set_type` method on expressions. The `infer_type` method is what gets called in phase 3 and it implements most of the type rules from the cool manual.
 
-After this annotating the AST with correct types is as straightforward as implementing all the inference rules in the cool manual.
+# Error recovery and reporting
 
-We also handle SELF_TYPE and are able to recover from type errors by using the strategy of assigning `No_type` to the expressions which give a type error. This is done in ClassTable::is_supertype_of as a special case, and in general when two types are present, `is_supertype_of` simply look at the tree and finds if the supertype is an ancestor of the subtype.
+We are able to recover from type errors by using the strategy of assigning `No_type` to the expressions which give a type error.
 
-least upper bound is found by following the lowest common ancestor algorithm (with adjustments for No_type and SELF_TYPE).
+For other errors like duplicate names, we're still able to recover from the error by not running the code which wil cause the error (like setting duplicate name in the type environment) but we continue with as many checks as we can. The details for each instance are commented.
 
-The failing test cases are mostly those which require duplicate name / declaration checking. I also detect all the type errors, but typeerror test cases are failing.
+We always report very precise line numbers, thanks to the function `semant_element_error` which I've defined and explained below
 
-Changes since backpack submission
+# Notable functions
+
+`semant_element_error` takes a classname and the tree node, and then calls the built-in `semant_error(filename, tree_node)` to report errors with accurate line numbers.
+
+`is_supertype_of` checks if a type is supertype of another. 
+
+We also handle SELF_TYPE and No_type. This is done in ClassTable::is_supertype_of as a special case, and in general when two types are present, `is_supertype_of` simply look at the tree and finds if the supertype is an ancestor of the subtype.
+
+`assert_supertype` is a wrapper around the above which also reports the error (accurate with line numbers)
+
+`assert_type_valid` checks if type is loaded in the class table, and handles error reporting when it isn't and also for SELF_TYPE
+
+`lowest_common_ancestor`
+finds the least upper bound by following the lowest common ancestor algorithm (with adjustments for No_type and SELF_TYPE).
+
+No test cases are failing
+
+# Changes
+
+## Changes since backpack submission
+
  - Added remaining typecheck rules (let, block, typcase, branch, loop, cond, dispatch, static_dispatch, assign)
  - Add `is_subtype_of` and `lowest_common_ancestor` (least upper bound) routines
  - Detect cyclic dependencies, absence of main class 
+
+## Changes since previous email submission
+
+ - Better error reporting. Some of my error messages were before the call to `semant_error` and some did not invoke `semant_error` at all, I incorporated that
+ - Adding checks for where self can and cannot appear in the program as an identifier.
+ - Add checks for 
+ - Refactor the code for loading classes and fill it in inheritance tree and do it more cleanly
+ - Detect and report name duplication in attributes, methods, parameter names, class declarations, and duplicate case branches, illegal method overriding in inherited class
+ - Add check to static dispatch to check
+ - Update typecheck rule for equality
