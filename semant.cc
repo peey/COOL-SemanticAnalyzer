@@ -892,21 +892,21 @@ Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
 };
 
 Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
-  Symbol T0dash = type_decl; // SELF_TYPE is accounted for here
+  Symbol *T0dash = &type_decl; // SELF_TYPE is accounted for here
   if (type_decl != SELF_TYPE) {
     if(!classtable->assert_type_valid(type_decl, c, this, true)) { // self type valid in let declaration
       //if it doesn't then recovery strategy is to let the symbol be defined but as an object
-      T0dash = Object;
+      T0dash = &Object;
     } 
   }
   Symbol T1 = init->ias_type(e, c);
-  classtable->assert_supertype(T0dash, T1, c, this); // type error in init expression is localized, doesn't affect other things
+  classtable->assert_supertype(*T0dash, T1, c, this); // type error in init expression is localized, doesn't affect other things
   e->O->enterscope();
   if (identifier == self) {
     classtable->semant_element_error(c, this);
     cerr << "Cannot declare 'self' in let binding" << endl;
   } else {
-    e->O->addid(identifier, &T0dash);
+    e->O->addid(identifier, T0dash);
   }
   Symbol T2 = body->ias_type(e, c);
   e->O->exitscope();
