@@ -208,8 +208,25 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 
   for (int i = 0; i < classes->len(); i++) {
     Class_ cl = classes->nth(i);
-    table2.insert({cl->get_name(), cl});
-    if (semant_debug) cout << " Yes indeed " << endl;
+    if (cl->get_name() == Object || cl->get_name() == IO || cl->get_name() == Int || cl->get_name() == Str || cl->get_name() == Bool) {
+      semant_error(cl);
+      cerr << "Cannot redefine basic class " << cl->get_name() << endl;
+    } else if (cl->get_name() == SELF_TYPE) {
+      semant_error(cl);
+      cerr << "Cannot use '" << cl->get_name() << "' as a class name" << endl;
+    } else {
+      if (cl->get_parent() == Int || cl->get_parent() == Str || cl->get_parent() == Bool || cl->get_parent() == SELF_TYPE) {
+        semant_error(cl);
+        cerr << "Class " << cl->get_name() << "cannot inherit from " << cl->get_parent() << endl;
+      } else {
+        if (table2.find(cl->get_name()) != table2.end()) {
+          semant_error(cl);
+          cerr << "Cannot redefine calss: " << cl->get_name() << endl;
+        } else {
+          table2.insert({cl->get_name(), cl});
+        }
+      }
+    }
   }
   /* End Phase 1*/
 
