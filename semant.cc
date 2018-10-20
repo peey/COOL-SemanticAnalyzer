@@ -889,6 +889,11 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
 
   method_class *m =  edash->M->lookup(name); // unclean...
 
+  if (m == NULL) {
+    classtable->semant_element_error(c, this);
+    cerr << "No function " << name << " found for the T0dash " << type_name << endl;
+  }
+
   Formals formals = m->get_formals();
 
   if(formals->len() != actual->len()) {
@@ -924,7 +929,17 @@ Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
     return No_type; // unsure how to recover from this error
   }
 
+  if(!classtable->assert_supertype(type_name, T0, c)) {
+    //TODO
+    return No_type;
+  }
+
   method_class *m =  edash->M->lookup(name);
+
+  if (m == NULL) {
+    classtable->semant_element_error(c, this);
+    cerr << "No function " << name << " found for the type " << type_name << endl;
+  }
 
   Formals formals = m->get_formals();
 
