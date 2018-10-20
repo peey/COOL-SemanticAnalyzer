@@ -151,11 +151,17 @@ bool process_class(ClassTable *ct, Classes classes, Symbol s) { // process_class
     }
   }
 
+
   while (!queued_classes.empty()) {
     c = queued_classes.front();
     queued_classes.pop_front();
 
     if (semant_debug) cout << "processing " << c << endl;
+
+    if (ct->tree->find(c) != NULL) {
+        ct->semant_error(cl_for_error_reporting);
+        cerr << "Cannot define class" << c  << "again"<< endl;
+    }
 
     Class_ cl = NULL; // find it, else return error
     for (int i = 0; i < classes->len(); i++) {
