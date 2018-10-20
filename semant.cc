@@ -414,6 +414,26 @@ bool ClassTable::check_type_exists(Symbol t) {
   return table2.find(t) != table2.end();
 }
 
+
+bool ClassTable::assert_type_valid(Symbol t, Symbol c, tree_node *m, bool self_allowed) {
+  // assert type exists check if it exists and in case it's self type then whether or not it's allowed, as per the user's own declaration
+  if (t == SELF_TYPE) {
+    if (!self_allowed) {
+      semant_element_error(c, m);
+      error_stream << "Usage of SELF_TYPE is not allowed here" << endl;
+    }
+    return self_allowed;
+  } else {
+    if(!check_type_exists(t)) {
+      semant_element_error(c, m);
+      error_stream << "The type referred to '"<< t << "' was not defined." << endl;
+      return false;
+    } else {
+      return true;
+    }
+  }
+};
+
 Symbol ClassTable::lowest_common_ancestor(Symbol a, Symbol b, Symbol c) {
   //citation: lowest common ancestor algorithm refered from https://stackoverflow.com/a/6342546/1412255. Implementation is mine.
   // TODO verify self type logic 
@@ -561,7 +581,7 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
   for (int i = 0; i < formals->len(); i++) {
     Formal f = formals->nth(i);
     if (param_names.find(f->get_name()) == param_names.end()) {
-      if (classtable->assert_type_exists(f->get_type(), c, this)) {
+      if (classtable->assert_type_valid(f->get_type(), c, this, false)) { // self type not permitted in function formals
         param_names.insert(f->get_name());
         // Loads each formal into the environment, does not load duplicate ones
         Symbol name = f->get_name();
@@ -578,7 +598,10 @@ void method_class::semant(TypeEnvironment *e, Symbol c) {
   }
   // now we can evaluate expressions
   Symbol inferred = expr->ias_type(e, c);
-  classtable->assert_supertype(return_type, inferred, c); // error here would be localized
+  if(classtable->assert_type_valid(return_type, c, this, true)) {
+    // we need to check only if it is legal
+    classtable->assert_supertype(return_type, inferred, c); // error here would be localized
+  }
   e->O->exitscope();
 }
 
@@ -616,7 +639,7 @@ void attr_class::load_type_info(Symbol cl) {
       classtable->semant_element_error(cl, this);
       cerr << "Attribute " << cl << "::" << name << " already defined in an ancestor class" << endl;
     } else {
-      if(classtable->assert_type_exists(type_decl, cl, this)) {
+      if(classtable->assert_type_valid(type_decl, cl, this, true)) { // self type is allowed in attr declarations
         typedeclarations->lookup(cl)->O->addid(name, &type_decl);
       } else {
         // recovery strategy: load it as an Object
@@ -707,7 +730,7 @@ Symbol isvoid_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 //TODO according to grammar, new can't be passed params, but check again
 Symbol new__class::infer_type(TypeEnvironment *e, Symbol c) {
-  if(classtable->assert_type_exists(type_name, c, this)) {
+  if(classtable->assert_type_valid(type_name, c, this, true)) { // self type is allowed here
     return type_name;
   } else {
     return No_type; // recovery strategy: continue with no_type
@@ -827,7 +850,7 @@ Symbol plus_class::infer_type(TypeEnvironment *e, Symbol c) {
 Symbol let_class::infer_type(TypeEnvironment *e, Symbol c) {
   Symbol T0dash = type_decl; // SELF_TYPE is accounted for here
   if (type_decl != SELF_TYPE) {
-    if(!classtable->assert_type_exists(type_decl, c, this)) {
+    if(!classtable->assert_type_valid(type_decl, c, this, true)) { // self type valid in let declaration
       //if it doesn't then recovery strategy is to let the symbol be defined but as an object
       T0dash = Object;
     } 
@@ -876,7 +899,7 @@ Symbol typcase_class::infer_type(TypeEnvironment *e, Symbol c) {
 
 Symbol branch_class::infer_type(TypeEnvironment *e, Symbol c) { // infers type as well as does some semantic analysis
   e->O->enterscope();
-  if(!classtable->assert_type_exists(type_decl, c, this)) {
+  if(!classtable->assert_type_valid(type_decl, c, this, false)) { // self type is invalid here
     //error recovery: set it as object and continue
     e->O->addid(name, &Object);
   } else {
@@ -936,6 +959,8 @@ Symbol dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
 
   if (Tnplus1 == SELF_TYPE) {
     Tnplus1 = T0;
+  } else if (!classtable->check_type_exists(Tnplus1)) {
+    Tnplus1 = Object; // recovery strategy. We've already reported the error, now just trying to check for more errors in recovery mode 
   }
 
   for (int i = 0; i < formals->len(); i++) {
@@ -979,7 +1004,10 @@ Symbol static_dispatch_class::infer_type(TypeEnvironment *e, Symbol c) {
 
   if (Tnplus1 == SELF_TYPE) {
     Tnplus1 = T0;
+  } else if (!classtable->check_type_exists(Tnplus1)) {
+    Tnplus1 = Object; // recovery strategy. We've already reported the error, now just trying to check for more errors in recovery mode 
   }
+
 
   for (int i = 0; i < formals->len(); i++) {
     Formal formal = formals->nth(i);

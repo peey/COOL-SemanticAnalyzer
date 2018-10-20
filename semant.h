@@ -127,15 +127,7 @@ public:
     return result;
   };
   bool check_type_exists(Symbol t);
-  bool assert_type_exists(Symbol t, Symbol c, tree_node *m) {
-    if(!check_type_exists(t)) {
-      semant_element_error(c, m);
-      error_stream << "The type referred to '"<< t << "' was not defined." << endl;
-      return false;
-    } else {
-      return true;
-    }
-  };
+  bool assert_type_valid(Symbol t, Symbol c, tree_node *m, bool self_allowed);
   Symbol lowest_common_ancestor(Symbol a, Symbol b, Symbol c);
 };
 
