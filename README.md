@@ -1,6 +1,3 @@
-Write-up for PA3
-----------------
-
 # Overview
 
 There are three phases to the semantic checks
