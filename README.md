@@ -62,20 +62,3 @@ finds the least upper bound by following the lowest common ancestor algorithm (w
 
 No test cases are failing
 
-# Changes
-
-## Changes since backpack submission
-
- - Added remaining typecheck rules (let, block, typcase, branch, loop, cond, dispatch, static_dispatch, assign)
- - Add `is_subtype_of` and `lowest_common_ancestor` (least upper bound) routines
- - Detect cyclic dependencies, absence of main class 
-
-## Changes since previous email submission
-
- - Better error reporting. Some of my error messages were before the call to `semant_error` and some did not invoke `semant_error` at all, I incorporated that
- - Adding checks for where self can and cannot appear in the program as an identifier.
- - Add checks for 
- - Refactor the code for loading classes and fill it in inheritance tree and do it more cleanly
- - Detect and report name duplication in attributes, methods, parameter names, class declarations, and duplicate case branches, illegal method overriding in inherited class
- - Add check to static dispatch to check
- - Update typecheck rule for equality
